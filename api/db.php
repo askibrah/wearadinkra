@@ -9,7 +9,13 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
-    $pdo->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET ' . DB_CHARSET . ' COLLATE ' . DB_CHARSET . '_unicode_ci');
+    /* Local dev convenience: create the database on first run. Shared hosts such as
+       cPanel pre-create the database and deny CREATE, so a failure here is expected. */
+    try {
+        $pdo->exec('CREATE DATABASE IF NOT EXISTS `' . DB_NAME . '` CHARACTER SET ' . DB_CHARSET . ' COLLATE ' . DB_CHARSET . '_unicode_ci');
+    } catch (PDOException $e) {
+        // No CREATE privilege — assume the database already exists.
+    }
     $pdo->exec('USE `' . DB_NAME . '`');
 } catch (PDOException $e) {
     wa_json(['ok' => false, 'message' => 'Database connection failed. Check api/config.php credentials.'], 500);

@@ -4,9 +4,10 @@
 Upload the whole project folder (all files and folders) to your hosting `public_html` / web root.
 
 ## 2. Database
-Two ready-to-import SQL files are in `sql/`:
+Three ready-to-import SQL files are in `sql/`:
 
 - `sql/wearadinkra-clean.sql` — **recommended for a fresh live site.** Creates the database, all tables, and loads the two admin accounts, the 5 live products, the reviews and the SEO settings. Test users, test orders and local visit logs are excluded.
+- `sql/wearadinkra-cpanel-import.sql` — same content as the clean file but with the `CREATE DATABASE` / `USE` / `DROP DATABASE` statements removed. **Use this one on cPanel or any shared host**, where the database must be created in cPanel first and its name carries your account prefix (`cpuser_wearadinkra`). Select that database in phpMyAdmin's left sidebar, then Import.
 - `sql/wearadinkra.sql` — full snapshot of the current local database (includes test accounts, orders and 400+ local visits). Use only if you deliberately want to carry all of that over.
 
 Import through phpMyAdmin → **Import** → choose the file → **Go**.
