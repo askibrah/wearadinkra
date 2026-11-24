@@ -27,6 +27,7 @@ cp api/config.example.php api/config.php
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Your live MySQL credentials. |
 | `MAIL_TRANSPORT` | `mail` (default) uses PHP `mail()` and cPanel's local MTA — no remote TLS handshake. Set to `smtp` only if you specifically want authenticated SMTP. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Only used when `MAIL_TRANSPORT` is `smtp`. Fill these on the server in `api/config.php`, which is git-ignored. Never put real credentials in `config.example.php`. |
+| `ADMIN_NOTIFY_EMAIL` | New-order alerts go here as well — set it to `admin@wearadinkrah.com`. The mailer also always alerts `admin@<site domain>` as a fallback. |
 | `MAIL_FROM`, `MAIL_FROM_NAME` | Use an address that exists on your hosting account. **The domain must match the live site** (`wearadinkrah.com`) or SPF/DKIM will reject the mail. If it does not match `APP_URL`, the mailer automatically falls back to `no-reply@<site domain>` and logs the correction to `api/storage/mail.log`. |
 | `DEV_MODE` | Deprecated — no longer used. OTPs and activation links are never returned to the browser; codes are delivered only by email and SMS. |
 | `MAIL_LOG_ONLY` | Keep `false`. Set `true` **only** for local testing with no mail server — emails are then written to `api/storage/mail.log` and reported as sent. |

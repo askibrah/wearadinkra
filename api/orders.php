@@ -136,6 +136,18 @@ try {
         foreach ($admins as $a) { if (strcasecmp((string)$a['email'], ADMIN_NOTIFY_EMAIL) === 0) { $already = true; break; } }
         if (!$already) wa_email_admin_order(ADMIN_NOTIFY_EMAIL, $orderId, $customer, $email, $phone, $total, $methodName, $itemList);
     }
+    // Always alert the domain's admin mailbox too, even if config.php still has an old address.
+    $siteHost = strtolower((string)parse_url(APP_URL, PHP_URL_HOST));
+    if ($siteHost !== '' && $siteHost !== 'localhost' && $siteHost !== '127.0.0.1') {
+        $siteAdmin = 'admin@' . $siteHost;
+        if (filter_var($siteAdmin, FILTER_VALIDATE_EMAIL)) {
+            $already = false;
+            foreach ($admins as $a) { if (strcasecmp((string)$a['email'], $siteAdmin) === 0) { $already = true; break; } }
+            if (!$already && (!defined('ADMIN_NOTIFY_EMAIL') || strcasecmp((string)ADMIN_NOTIFY_EMAIL, $siteAdmin) !== 0)) {
+                wa_email_admin_order($siteAdmin, $orderId, $customer, $email, $phone, $total, $methodName, $itemList);
+            }
+        }
+    }
     if (defined('ADMIN_NOTIFY_PHONE') && ADMIN_NOTIFY_PHONE !== '') {
         $already = false;
         foreach ($admins as $a) { if (trim((string)$a['phone']) === trim(ADMIN_NOTIFY_PHONE)) { $already = true; break; } }

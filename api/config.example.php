@@ -43,7 +43,7 @@ define('SMS_SENDER', 'BGI OTP');
 define('SMS_CA_BUNDLE', '');
 
 /* Admin order notifications (fallback if no active admin phone/email found in DB) */
-define('ADMIN_NOTIFY_EMAIL', 'info@wearadinkrah.com');
+define('ADMIN_NOTIFY_EMAIL', 'admin@wearadinkrah.com');
 define('ADMIN_NOTIFY_PHONE', '');
 
 /* ---------------------------------------------------------------
