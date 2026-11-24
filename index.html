@@ -2945,7 +2945,7 @@
             if (adinkraSymbols.length > 1 && i === lastExploreIndex) i = (i + 1) % adinkraSymbols.length;
             lastExploreIndex = i;
             const s = adinkraSymbols[i];
-            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full object-contain"></div>';
+            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><span class="relative inline-block max-w-full max-h-full" style="line-height:0"><img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full object-contain"><span class="absolute inset-0 pointer-events-none" style="background:repeating-linear-gradient(180deg,rgba(198,40,40,.35) 0 14px,rgba(245,197,66,.35) 14px 28px,rgba(46,125,50,.35) 28px 42px,rgba(17,17,17,.35) 42px 56px);mix-blend-mode:multiply"></span></span></div>';
             el.setAttribute('aria-label', s.name + ' Adinkra symbol');
             const nameEl = document.getElementById('explore-symbol-name');
             if (nameEl) nameEl.textContent = s.name;
