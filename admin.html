@@ -1075,6 +1075,7 @@ function updateSymPreview() {
                 const fd = new FormData();
                 fd.append('image', file);
                 fd.append('csrf_token', csrf || '');
+                fd.append('folder', 'adinkra-symbols');
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', 'api/upload.php');
                 xhr.upload.onprogress = e => { if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100)); };

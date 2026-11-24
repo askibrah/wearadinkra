@@ -58,12 +58,17 @@ if ($w > $maxW) {
     $w = $newW; $h = $newH;
 }
 
-$dir = realpath(__DIR__ . '/../assets/product-images');
-if (!$dir) {
-    $dir = __DIR__ . '/../assets/product-images';
-    @mkdir($dir, 0775, true);
-}
-$name = 'p_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.jpg';
+        $folder = (string)($_POST['folder'] ?? 'product-images');
+$folders = [
+    'product-images' => [__DIR__ . '/../assets/product-images', 'assets/product-images/', 'p_'],
+    'adinkra-symbols' => [__DIR__ . '/../assets/adinkra-symbols', 'assets/adinkra-symbols/', 'sym_'],
+];
+if (!isset($folders[$folder])) $folder = 'product-images';
+$target = $folders[$folder][0];
+$dir = realpath($target);
+if (!$dir) { @mkdir($target, 0775, true); $dir = realpath($target); }
+if (!$dir) wa_json(['ok' => false, 'message' => 'Upload folder is not available.'], 500);
+$name = $folders[$folder][2] . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.jpg';
 $path = $dir . DIRECTORY_SEPARATOR . $name;
 imagejpeg($src, $path, 82);
 imagedestroy($src);
@@ -72,5 +77,5 @@ if (!is_file($path)) {
     wa_json(['ok' => false, 'message' => 'Failed to save image.'], 500);
 }
 
-$relative = 'assets/product-images/' . $name;
+$relative = $folders[$folder][1] . $name;
 wa_json(['ok' => true, 'path' => $relative, 'url' => $relative]);
