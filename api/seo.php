@@ -36,6 +36,10 @@ function wa_seo_load(PDO $pdo, array $defaults): array
 function wa_seo_base(array $s): string
 {
     $base = trim((string)($s['baseUrl'] ?? ''));
+    // A typo such as "http:s//example.com/" must never end up in robots.txt or the sitemap.
+    if ($base !== '' && (!filter_var($base, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $base))) {
+        $base = '';
+    }
     return rtrim($base !== '' ? $base : APP_URL, '/');
 }
 
@@ -92,6 +96,16 @@ foreach ($defaults as $key => $val) {
     if (is_bool($val)) $saved[$key] = filter_var($value, FILTER_VALIDATE_BOOLEAN);
     else $saved[$key] = is_scalar($value) ? trim((string)$value) : $val;
 }
+
+// Keep a malformed Base URL out of the database; fall back to APP_URL instead.
+if (array_key_exists('baseUrl', $input)) {
+    $candidate = trim((string)$input['baseUrl']);
+    if ($candidate !== '' && (!filter_var($candidate, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $candidate))) {
+        $candidate = '';
+    }
+    $saved['baseUrl'] = $candidate;
+}
+
 $stmt = $pdo->prepare('DELETE FROM seo_settings');
 $stmt->execute();
 $stmt = $pdo->prepare('INSERT INTO seo_settings (settings, updated_at) VALUES (?, NOW())');
