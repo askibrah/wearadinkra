@@ -54,9 +54,8 @@ Open **Admin → Settings → SEO** and set **Base URL** to `https://wearadinkra
 
 ## 7. Test email and SMS
 - Preview the exact email designs (no sending): `email-preview.php?kind=activation`, `?kind=otp`, `?kind=promotion`.
-- Send a real test email: call `api/notify.php` with a POST JSON body:
-  `{ "action": "test_email", "csrf_token": "<token from api/admin.php?action=csrf>", "to": "you@example.com", "kind": "otp" }`
-  (`kind` can be `otp`, `activation` or `promotion`.)
+- Send a real test email: **Admin → Settings → Notifications → Send a test email**. Pick the address and the template; the result panel reports the exact sender address used and whether the message was actually sent or only logged.
+  (Programmatically: POST JSON `{ "action": "test_email", "csrf_token": "<token from api/admin.php?action=csrf>", "to": "you@example.com", "kind": "otp" }` to `api/notify.php`. Requires an admin session — `kind` can be `otp`, `activation` or `promotion`.)
 - Register a test customer account in the storefront: the activation email must contain the **same OTP** sent by SMS plus the activation link.
 - Every email uses the branded template with the logo, Kente strips and footer. Delivery is logged to `api/storage/mail.log`; SMS to `api/storage/sms.log`.
 

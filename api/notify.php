@@ -54,6 +54,13 @@ if ($action === 'test_email') {
         wa_json(['ok' => false, 'message' => 'Enter a valid email address.'], 422);
     }
     $kind = (string)($input['kind'] ?? 'otp');
+    if (!in_array($kind, ['otp', 'activation', 'promotion'], true)) {
+        wa_json(['ok' => false, 'message' => 'Unknown email type.'], 422);
+    }
+
+    $from = wa_mail_from();
+    $loggedOnly = (defined('MAIL_LOG_ONLY') && MAIL_LOG_ONLY) || DEV_MODE;
+
     if ($kind === 'activation') {
         $ok = wa_email_activation($to, 'Test Customer', bin2hex(random_bytes(16)), '123456');
     } elseif ($kind === 'promotion') {
@@ -61,7 +68,29 @@ if ($action === 'test_email') {
     } else {
         $ok = wa_email_otp($to, 'Test Customer', '123456', 10);
     }
-    wa_json(['ok' => $ok, 'message' => $ok ? 'Test email queued. Check api/storage/mail.log on local servers.' : 'Email failed to send. Check api/storage/mail.log.']);
+
+    if ($ok && $loggedOnly) {
+        wa_json([
+            'ok' => true,
+            'logged_only' => true,
+            'from' => $from,
+            'message' => 'Written to api/storage/mail.log only — MAIL_LOG_ONLY or DEV_MODE is enabled, so nothing was actually sent.',
+        ]);
+    }
+    if ($ok) {
+        wa_json([
+            'ok' => true,
+            'logged_only' => false,
+            'from' => $from,
+            'message' => "Test email sent to {$to} from {$from}. If it does not arrive, check the spam folder, then SPF/DKIM under cPanel → Email Deliverability.",
+        ]);
+    }
+    wa_json([
+        'ok' => false,
+        'logged_only' => false,
+        'from' => $from,
+        'message' => "Sending failed from {$from}. Open api/storage/mail.log on the server for the reason.",
+    ], 502);
 }
 
 wa_json(['ok' => false, 'message' => 'Unknown action.'], 400);

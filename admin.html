@@ -257,6 +257,20 @@
                         <button type="submit" class="mt-6 w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Save settings</button>
                         <p id="settings-msg" class="hidden text-xs text-green-700 mt-3"></p>
                     </div>
+                    <div class="card p-6">
+                        <h2 class="font-bold text-[#0B132B] mb-1">Send a test email</h2>
+                        <p class="text-xs text-gray-500 mb-5">Checks the mail configuration end to end and reports the exact sender address.</p>
+                        <div class="grid sm:grid-cols-2 gap-3">
+                            <input id="test-email-to" type="email" placeholder="you@example.com" class="border border-gray-300 px-4 py-3 text-sm w-full outline-none focus:border-brand-sea">
+                            <select id="test-email-kind" class="border border-gray-300 px-4 py-3 text-sm w-full outline-none focus:border-brand-sea">
+                                <option value="otp">OTP code</option>
+                                <option value="activation">Activation email</option>
+                                <option value="promotion">Promotion email</option>
+                            </select>
+                        </div>
+                        <button type="button" id="test-email-btn" onclick="sendTestEmail()" class="mt-4 w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Send test email</button>
+                        <p id="test-email-msg" class="hidden text-xs mt-3"></p>
+                    </div>
                     </div>
                     <div id="set-pane-account" class="settings-pane hidden grid lg:grid-cols-1 gap-6">
                         <div class="card p-6">
@@ -445,6 +459,24 @@ async function savePromo(e){
     }catch(err){adminToast('Promotion started. Email notification failed — check api/storage/mail.log.');}
 }
 function removePromo(i){const p=JSON.parse(localStorage.getItem('wa_promotions')||'[]');p.splice(i,1);localStorage.setItem('wa_promotions',JSON.stringify(p));renderPromos();}
+async function sendTestEmail(){
+    const to=document.getElementById('test-email-to').value.trim();
+    const kind=document.getElementById('test-email-kind').value;
+    const msg=document.getElementById('test-email-msg');
+    const btn=document.getElementById('test-email-btn');
+    if(!to){msg.textContent='Enter an email address first.';msg.className='text-xs mt-3 text-red-600';return;}
+    const label=btn.textContent;btn.disabled=true;btn.textContent='Sending…';
+    msg.className='hidden text-xs mt-3';
+    try{
+        const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(r=>r.csrf_token).catch(()=>null);
+        const r=await fetch('api/notify.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test_email',csrf_token:csrf,to,kind})}).then(r=>r.json());
+        msg.textContent=r.message||'Unknown response.';
+        msg.className='text-xs mt-3 '+(r.ok?'text-green-700':'text-red-600');
+    }catch(err){
+        msg.textContent='Network error. Please try again.';
+        msg.className='text-xs mt-3 text-red-600';
+    }finally{btn.disabled=false;btn.textContent=label;}
+}
 function orderImage(o){
     const it=(o.items||[])[0]||{};
     if(it.image)return it.image;
