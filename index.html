@@ -4198,6 +4198,23 @@
             no: s.no, name: s.name, meaning: s.meaning, src: s.img, img: s.img
         }));
         const adinkraMeanings = Object.fromEntries(adinkraSymbols.map(s => [s.name, s.meaning]));
+        async function loadCustomSymbols() {
+            try {
+                const r = await fetch('api/symbols.php?action=list', { cache: 'no-store' }).then(x => x.json());
+                if (!r.ok || !Array.isArray(r.symbols)) return;
+                r.symbols.forEach(s => {
+                    if (!s || !s.name || !s.image || adinkraSymbols.some(x => x.name === s.name)) return;
+                    const item = {
+                        no: adinkraSymbols.length + 1,
+                        name: s.name,
+                        meaning: s.description || 'A timeless Ghanaian symbol with a story to tell.',
+                        src: s.image, img: s.image, custom: true
+                    };
+                    adinkraSymbols.push(item);
+                    adinkraMeanings[item.name] = item.meaning;
+                });
+            } catch (e) { /* keep the built-in symbols */ }
+        }
         function showSymbolMeaning(name) {
             const el = document.getElementById('symbol-meaning');
             const meaning = adinkraMeanings[name] || 'A timeless Ghanaian symbol with a story to tell.';
@@ -4291,8 +4308,9 @@
                     <button type="button" onclick="showAdinkraDetail('${escapeHtml(s.name).replace(/'/g, "\\'")}')" class="adinkra-tile w-56 bg-white hover:bg-white rounded-2xl shadow-lg flex flex-col items-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-gray-100 hover:border-brand-sea/30" title="${escapeHtml(s.name)}">
                         <div class="w-56 h-52 flex items-center justify-center p-6 bg-white">
                             <div class="relative w-full h-full">
-                                <div role="img" aria-label="${escapeHtml(s.name)} Adinkra Symbol" class="absolute inset-0" style="background:repeating-linear-gradient(180deg,#C62828 0 12px,#F5C542 12px 24px,#2E7D32 24px 36px,#111111 36px 48px);-webkit-mask-image:url('${s.src}');mask-image:url('${s.src}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div>
-                                <div class="adinkra-hover-black absolute inset-0" style="background:#111111;-webkit-mask-image:url('${s.src}');mask-image:url('${s.src}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div>
+                                ${s.custom
+                                    ? '<img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain">'
+                                    : '<div role="img" aria-label="' + escapeHtml(s.name) + ' Adinkra Symbol" class="absolute inset-0" style="background:repeating-linear-gradient(180deg,#C62828 0 12px,#F5C542 12px 24px,#2E7D32 24px 36px,#111111 36px 48px);-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div><div class="adinkra-hover-black absolute inset-0" style="background:#111111;-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div>'}
                             </div>
                         </div>
                         ${kenteStrip}
@@ -4662,6 +4680,7 @@
             setInterval(randomizeExploreSymbol, 5000);
             startCollectionFlash();
             buildCategoryMegaMenu();
+            await loadCustomSymbols();
             renderAdinkraCarousel();
             renderSymbolOptions();
             initFilterCategoryCounts();

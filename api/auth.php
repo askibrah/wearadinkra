@@ -32,6 +32,26 @@ function wa_user_public(array $u): array
     ];
 }
 
+function wa_social_credentials(PDO $pdo): array
+{
+    $cfg = [
+        'googleId' => defined('GOOGLE_CLIENT_ID') ? (string) GOOGLE_CLIENT_ID : '',
+        'googleSecret' => defined('GOOGLE_CLIENT_SECRET') ? (string) GOOGLE_CLIENT_SECRET : '',
+        'fbId' => defined('FACEBOOK_CLIENT_ID') ? (string) FACEBOOK_CLIENT_ID : '',
+        'fbSecret' => defined('FACEBOOK_CLIENT_SECRET') ? (string) FACEBOOK_CLIENT_SECRET : '',
+    ];
+    try {
+        $row = $pdo->query('SELECT settings FROM seo_settings ORDER BY id DESC LIMIT 1')->fetchColumn();
+        $saved = $row ? json_decode((string)$row, true) : null;
+        if (is_array($saved)) {
+            foreach (['googleId', 'googleSecret', 'fbId', 'fbSecret'] as $key) {
+                if (isset($saved[$key]) && $saved[$key] !== '') $cfg[$key] = (string)$saved[$key];
+            }
+        }
+    } catch (PDOException $e) { /* fall back to config.php constants */ }
+    return $cfg;
+}
+
 function wa_generate_otp(PDO $pdo, int $userId, string $channel, ?int $ttl = null): string
 {
     $otp = str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -269,7 +289,8 @@ switch ($action) {
         $token = (string)($input['token'] ?? '');
         if (!in_array($provider, ['google', 'facebook'], true)) wa_json(['ok' => false, 'message' => 'Unsupported provider.'], 422);
 
-        $clientId = $provider === 'google' ? GOOGLE_CLIENT_ID : FACEBOOK_CLIENT_ID;
+        $creds = wa_social_credentials($pdo);
+        $clientId = $provider === 'google' ? $creds['googleId'] : $creds['fbId'];
         if ($clientId === '') {
             wa_json(['ok' => false, 'message' => ucfirst($provider) . ' login is not configured yet. Add the app ID in api/config.php.', 'not_configured' => true], 501);
         }

@@ -22,7 +22,8 @@ $defaults = [
     'listListings' => true,
     'gscToken' => '', 'bingToken' => '', 'gaId' => '', 'gtmId' => '', 'adsenseId' => '',
     'orgName' => 'Wear Adinkra', 'orgDescription' => '', 'orgLogo' => '',
-    'facebookPage' => '', 'twitterProfile' => '', 'instagramUrl' => '', 'linkedinUrl' => '', 'youtubeUrl' => ''
+    'facebookPage' => '', 'twitterProfile' => '', 'instagramUrl' => '', 'linkedinUrl' => '', 'youtubeUrl' => '',
+    'googleId' => '', 'googleSecret' => '', 'fbId' => '', 'fbSecret' => ''
 ];
 
 function wa_seo_load(PDO $pdo, array $defaults): array
