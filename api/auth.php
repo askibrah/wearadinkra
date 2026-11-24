@@ -141,12 +141,6 @@ switch ($action) {
             'user_id' => $userId,
             'email' => $email,
         ];
-        if (DEV_MODE) {
-            $response['dev'] = [
-                'otp' => $otp,
-                'activation_link' => APP_URL . 'activate.html?token=' . urlencode($token),
-            ];
-        }
         wa_json($response);
 
     /* ---------- VERIFY OTP ---------- */
@@ -232,7 +226,6 @@ switch ($action) {
         $token = wa_issue_activation($pdo, (int)$user['id']);
         wa_send_otps($pdo, $user, $otp, $token);
         $response = ['ok' => true, 'message' => 'A new code has been sent to your email.'];
-        if (DEV_MODE) $response['dev'] = ['otp' => $otp, 'activation_link' => APP_URL . 'activate.html?token=' . urlencode($token)];
         wa_json($response);
 
     /* ---------- SOCIAL (Google / Facebook) ---------- */
@@ -316,7 +309,6 @@ switch ($action) {
         wa_record_attempt($pdo, $rateKey, false);
 
         $response = ['ok' => true, 'message' => 'If an account matches, a reset code has been sent to your email and phone.'];
-        if (DEV_MODE && $user) $response['dev'] = ['otp' => $otp, 'identifier' => $user['email']];
         wa_json($response);
 
     case 'forgot_verify':

@@ -29,7 +29,7 @@ MySQL database `wearadinkra` is created automatically. Set credentials in `api/c
 - Local testing without a mail server: set `MAIL_LOG_ONLY` to `true` in `config.php`. Emails are logged and reported as sent, but nothing leaves the machine. Keep it `false` on the live server.
 - Preview the exact email designs locally at `email-preview.php?kind=activation`, `?kind=otp` or `?kind=promotion` (sample data only, no real codes).
 - Google/Facebook: paste IDs/secrets into the four constants in `config.php`. Until then `social` returns `not_configured`. After an OAuth redirect, open `index.html?social_provider=google&social_token=<token>` and the page exchanges it via AJAX.
-- `DEV_MODE` is `false` by default. Set it to `true` temporarily to see OTPs and activation links in AJAX responses for local testing.
+- `DEV_MODE` is deprecated and ignored. OTPs and activation links are never included in AJAX responses — codes are delivered only through email and SMS. On a local machine with no mail server, check `api/storage/mail.log` instead.
 
 ## Notifications (`notify.php`)
 CSRF-protected POST JSON with `{ action, csrf_token, ... }`:

@@ -60,10 +60,6 @@ function wa_send_email(string $to, string $subject, string $html): bool
         return $ok;
     }
 
-    if (DEV_MODE) {
-        return true;
-    }
-
     $headers = "MIME-Version: 1.0\r\n";
     $headers .= "Content-type: text/html; charset=UTF-8\r\n";
     $headers .= 'From: ' . $fromName . ' <' . $from . ">\r\n";

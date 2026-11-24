@@ -59,7 +59,7 @@ if ($action === 'test_email') {
     }
 
     $from = wa_mail_from();
-    $loggedOnly = (defined('MAIL_LOG_ONLY') && MAIL_LOG_ONLY) || DEV_MODE;
+    $loggedOnly = defined('MAIL_LOG_ONLY') && MAIL_LOG_ONLY;
 
     if ($kind === 'activation') {
         $ok = wa_email_activation($to, 'Test Customer', bin2hex(random_bytes(16)), '123456');
@@ -74,7 +74,7 @@ if ($action === 'test_email') {
             'ok' => true,
             'logged_only' => true,
             'from' => $from,
-            'message' => 'Written to api/storage/mail.log only — MAIL_LOG_ONLY or DEV_MODE is enabled, so nothing was actually sent.',
+            'message' => 'Written to api/storage/mail.log only — MAIL_LOG_ONLY is enabled, so nothing was actually sent.',
         ]);
     }
     if ($ok) {

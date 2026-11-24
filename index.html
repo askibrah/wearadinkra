@@ -147,8 +147,11 @@
         nav.nav-transparent.nav-on-light a:hover,
         nav.nav-transparent.nav-on-light button:hover { color: #1C5D99; }
         nav.nav-transparent.nav-on-light .border-brand-dark { border-color: #0B132B; }
-        #main-nav .font-brand { color: #0B132B !important; }
-        #main-nav .font-lato { color: #000000 !important; }
+        /* Logo text stays legible over hero images; dark only when the bar is solid */
+        #main-nav .font-brand { color: #ffffff !important; text-shadow: 0 1px 5px rgba(0,0,0,0.75); }
+        #main-nav .font-lato { color: #ffffff !important; text-shadow: 0 1px 4px rgba(0,0,0,0.75); }
+        #main-nav.nav-scrolled .font-brand { color: #0B132B !important; text-shadow: none; }
+        #main-nav.nav-scrolled .font-lato { color: #000000 !important; text-shadow: none; }
         nav.nav-scrolled {
             background-color: #ffffff !important;
             border-bottom: 1px solid #e5e7eb;
@@ -291,7 +294,7 @@
         }
 
         /* ---- Flat buttons: no rounded corners anywhere ---- */
-        button { border-radius: 0 !important; }
+        button:not([id^="dot-"]) { border-radius: 0 !important; }
 
         /* ---- Consistent button theme ---- */
         button:not(.nav-icon):not(.color-btn):not(.plain-btn):not(.qty-btn):not(.size-btn):not(.symbol-btn):not(.adinkra-dot):not(.adinkra-tile):not([id^="dot-"]):not(:has(> i:only-child)) {
@@ -406,8 +409,6 @@
         .about-eyebrow { font-size: 1.4rem; letter-spacing: .28em; text-transform: uppercase; color: #1C5D99; font-weight: 700; text-align: center; }
         .about-title { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif; font-size: 1.6rem; color: #0B132B; text-align: center; margin: .6rem 0 1.6rem; }
         @media (min-width: 768px) { .about-title { font-size: 2rem; } }
-        #home-product-count { border: none !important; background: transparent !important; }
-        #home-product-count:hover { color: #1C5D99 !important; }
         .wa-arc { width: 56px; height: 24px; overflow: visible; margin-top: -5px; animation: none !important; }
         .wa-arc text { fill: #0B132B; font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; }
         .wa-support {
@@ -832,7 +833,6 @@
                 <input type="text" id="otp-code" placeholder="Verification code" class="w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea tracking-widest">
                 <button onclick="verifyOtp()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Verify Codes</button>
                 <button onclick="resendOtp()" class="plain-btn w-full text-xs text-brand-sea underline hover:text-brand-dark">Resend codes</button>
-                <div id="otp-dev" class="hidden text-xs text-gray-500 bg-gray-50 p-3 break-all"></div>
                 <p id="otp-msg" class="text-xs text-center"></p>
             </div>
             <p id="auth-switch-row" class="text-sm text-center mt-6 text-gray-500">
@@ -854,7 +854,6 @@
                 <button id="forgot-verify-btn" onclick="forgotVerify()" class="hidden w-full bg-brand-dark text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-sea transition-colors">Verify Code</button>
                 <input type="password" id="forgot-password" placeholder="New password" class="hidden w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
                 <button id="forgot-reset-btn" onclick="forgotReset()" class="hidden w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Set New Password</button>
-                <div id="forgot-dev" class="hidden text-xs text-gray-500 bg-gray-50 p-3"></div>
                 <p id="forgot-msg" class="text-xs text-center"></p>
             </div>
             <p class="text-xs text-center mt-5 pt-4 border-t border-gray-100 text-gray-500 leading-relaxed">
@@ -939,14 +938,14 @@
         <!-- ================= HOME PAGE ================= -->
         <section id="page-home" class="page-section active">
             <!-- Hero: carousel + Explore + Collection -->
-            <div id="hero-panels" class="block lg:grid lg:grid-cols-3">
+            <div id="hero-panels" class="flex overflow-x-auto hide-scrollbar snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible">
                 <div id="hero-carousel" class="relative min-w-full snap-center lg:min-w-0 h-[50vh] lg:h-[70vh] min-h-[400px] bg-brand-dark overflow-hidden group">
                 <div class="carousel-slide absolute inset-0 opacity-100 z-10">
                     <img id="hero-slide-1-img" src="assets/svg/kente-fabric.svg" alt="Heritage" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-center text-center px-4">
-                        <span class="text-white tracking-[0.3em] uppercase text-xs md:text-sm font-medium mb-4 block">Preserving Heritage</span>
-                        <h1 class="font-serif text-5xl md:text-6xl text-white mb-4 leading-tight max-w-3xl">Wear Your Culture<br>wearadinkra</h1>
-                        <p class="text-white/80 text-sm md:text-base max-w-xl mb-6">Custom designs from wearadinkra</p>
+                        <span class="text-white tracking-[0.3em] uppercase text-xs md:text-sm font-medium mb-2 sm:mb-4 block">Preserving Heritage</span>
+                        <h1 class="font-serif text-5xl md:text-6xl text-white mb-2 sm:mb-4 leading-tight max-w-3xl">Wear Your Culture<br>wearadinkra</h1>
+                        <p class="text-white/80 text-sm md:text-base max-w-xl mb-3 sm:mb-6">Custom designs from wearadinkra</p>
                         <button id="hero-shop-btn" onclick="showPage('shop')" class="bg-brand-sea hover:bg-white text-white hover:text-brand-dark px-8 py-3 uppercase tracking-widest text-sm font-medium transition-colors duration-300">
                             <i class="fa-solid fa-cart-shopping mr-2"></i>Shop Now
                         </button>
@@ -955,9 +954,9 @@
                 <div class="carousel-slide absolute inset-0 opacity-0 z-0">
                     <img id="hero-slide-2-img" src="assets/svg/adinkra-bg-kente.svg" alt="New Arrivals" class="w-full h-full object-cover">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex flex-col items-center justify-center text-center px-4">
-                        <span class="text-white tracking-[0.3em] uppercase text-xs md:text-sm font-medium mb-4 block">New Collection</span>
-                        <h1 class="font-serif text-4xl md:text-6xl text-white mb-4 leading-tight max-w-3xl">The Adinkra Classic.</h1>
-                        <p class="text-white/80 text-sm md:text-base max-w-xl mb-6">Discover our latest heritage pieces.</p>
+                        <span class="text-white tracking-[0.3em] uppercase text-xs md:text-sm font-medium mb-2 sm:mb-4 block">New Collection</span>
+                        <h1 class="font-serif text-4xl md:text-6xl text-white mb-2 sm:mb-4 leading-tight max-w-3xl">The Adinkra Classic.</h1>
+                        <p class="text-white/80 text-sm md:text-base max-w-xl mb-3 sm:mb-6">Discover our latest heritage pieces.</p>
                         <button id="hero-piece-btn" onclick="showPage('shop')" class="bg-white text-brand-dark hover:bg-brand-sea hover:text-white px-8 py-3 uppercase tracking-widest text-sm font-medium transition-colors duration-300">
                             Shop Collection
                         </button>
@@ -966,8 +965,8 @@
                 <div class="carousel-slide absolute inset-0 opacity-0 z-0">
                     <div class="absolute inset-0 bg-brand-bg flex flex-col items-center justify-center text-center px-4">
                         <img src="assets/wearadinkra-logo.png" alt="Wear Adinkra logo" class="w-32 h-32 md:w-44 md:h-44 object-contain mb-5 drop-shadow-sm mx-auto">
-                        <h1 class="hero-story-title font-serif text-2xl md:text-3xl text-brand-dark mb-3 leading-tight max-w-3xl">Wear Your Story.</h1>
-                        <p class="text-brand-dark/80 text-sm md:text-base max-w-xl mb-4">Each symbol carries a deep truth.</p>
+                        <h1 class="hero-story-title font-serif text-2xl md:text-3xl text-brand-dark mb-1.5 sm:mb-3 leading-tight max-w-3xl">Wear Your Story.</h1>
+                        <p class="text-brand-dark/80 text-sm md:text-base max-w-xl mb-2 sm:mb-4">Each symbol carries a deep truth.</p>
                         <button id="hero-story-btn" onclick="showPage('story')" class="bg-brand-dark hover:bg-brand-sea text-white px-8 py-3 uppercase tracking-widest text-sm font-medium transition-colors duration-300">
                             Our Story
                         </button>
@@ -976,9 +975,9 @@
 
                 <!-- Carousel Indicators -->
                 <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
-                    <button onclick="goToSlide(0)" class="w-3 h-3 rounded-full bg-white opacity-100 transition-opacity" id="dot-0"></button>
-                    <button onclick="goToSlide(1)" class="w-3 h-3 rounded-full bg-white opacity-50 transition-opacity" id="dot-1"></button>
-                    <button onclick="goToSlide(2)" class="w-3 h-3 rounded-full bg-white opacity-50 transition-opacity" id="dot-2"></button>
+                    <button onclick="goToSlide(0)" class="w-3 h-3 rounded-full bg-green-500 opacity-100 transition-opacity" id="dot-0"></button>
+                    <button onclick="goToSlide(1)" class="w-3 h-3 rounded-full bg-green-500 opacity-50 transition-opacity" id="dot-1"></button>
+                    <button onclick="goToSlide(2)" class="w-3 h-3 rounded-full bg-green-500 opacity-50 transition-opacity" id="dot-2"></button>
                 </div>
             </div>
 
@@ -986,10 +985,10 @@
             <div class="explore-panel relative min-w-full snap-center lg:min-w-0 h-[50vh] lg:h-[70vh] min-h-[400px] bg-white px-8">
                 <div id="explore-symbol" class="absolute top-0 left-0 right-0 h-[calc(100%-9rem)] w-full p-10 pointer-events-none select-none" aria-hidden="true"></div>
                 <div class="absolute bottom-0 left-0 right-0 z-10 bg-white/95 px-6 py-5 text-center shadow-[0_-8px_24px_rgba(255,255,255,0.9)]">
-                    <p id="explore-symbol-name" class="text-[15px] uppercase tracking-[0.2em] text-[#0B132B] font-semibold mb-2 pointer-events-none select-none"></p>
-                    <span class="block text-sm tracking-[0.3em] uppercase text-brand-dark mb-3">Adinkra Symbols</span>
-                    <h2 class="dark-gradient-text font-serif text-3xl lg:text-4xl my-3">Shop wearadinkra</h2>
-                    <p class="text-gray-700 text-base mb-4">Symbols that speak. Styles that last.</p>
+                    <p id="explore-symbol-name" class="text-[15px] uppercase tracking-[0.2em] text-[#0B132B] font-semibold mb-1 sm:mb-2 pointer-events-none select-none"></p>
+                    <span class="block text-sm tracking-[0.3em] uppercase text-brand-dark mb-1.5 sm:mb-3">Adinkra Symbols</span>
+                    <h2 class="dark-gradient-text font-serif text-3xl lg:text-4xl my-1.5 sm:my-3">Shop wearadinkra</h2>
+                    <p class="text-gray-700 text-base mb-2 sm:mb-4">Symbols that speak. Styles that last.</p>
                     <button onclick="showPage('story', 'adinkra-carousel')" class="bg-brand-dark text-white px-8 py-3 text-sm uppercase tracking-widest hover:bg-brand-sea transition-colors">LEARN ADINKRA SYMBOLS</button>
                 </div>
             </div>
@@ -999,33 +998,34 @@
                 <img id="collection-flash-img" src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-0 pointer-events-none">
                 <div class="relative z-10">
                     <span class="text-sm tracking-[0.3em] uppercase text-white">Curated Pieces</span>
-                    <h2 class="font-serif text-4xl lg:text-5xl text-white my-5">Collection</h2>
-                    <p class="text-white/90 text-base mb-7">Heritage made wearable.</p>
+                    <h2 class="font-serif text-4xl lg:text-5xl text-white my-2.5 sm:my-5">Collection</h2>
+                    <p class="text-white/90 text-base mb-3.5 sm:mb-7">Heritage made wearable.</p>
                     <button onclick="showPage('shop')" class="group bg-white text-brand-dark px-8 py-3.5 text-sm uppercase tracking-widest hover:bg-brand-sea hover:text-white transition-colors">View Collection <i class="fa-solid fa-arrow-right ml-2 transition-transform duration-300 group-hover:translate-x-1"></i></button>
                 </div>
             </div>
             </div>
 
-            <!-- Shop toolbar (views / count / sort / filter) -->
+            <!-- Shop toolbar (views / sort / filter) -->
             <div id="home-toolbar" class="bg-white border-b border-gray-200 sticky top-20 z-30 transition-shadow duration-300">
                 <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid grid-cols-[auto_1fr_1fr] items-stretch text-xs sm:text-sm uppercase tracking-wider text-gray-600">
-                        <!-- View modes -->
-                        <div class="hidden sm:flex items-center gap-1 pr-4">
-                            <button type="button" onclick="setHomeView('small')" data-view="small" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-table-cells"></i></button>
-                            <button type="button" onclick="setHomeView('medium')" data-view="medium" class="view-toggle p-2 text-brand-dark"><i class="fa-solid fa-table-cells-large"></i></button>
-                            <button type="button" onclick="setHomeView('list')" data-view="list" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-list"></i></button>
+                    <div class="grid grid-cols-[auto_1fr] items-stretch text-xs sm:text-sm uppercase tracking-wider text-gray-600">
+                        <!-- Filter + view modes -->
+                        <div class="flex items-stretch">
+                            <button type="button" onclick="toggleAdvancedFilter()" class="plain-btn uppercase tracking-wider py-4 pr-3 hover:text-brand-dark flex items-center gap-1 shrink-0"><i class="fa-solid fa-filter"></i>Filter</button>
+                            <div class="hidden sm:flex items-center gap-1 px-3 border-l border-gray-200">
+                                <button type="button" onclick="setHomeView('small')" data-view="small" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-table-cells"></i></button>
+                                <button type="button" onclick="setHomeView('medium')" data-view="medium" class="view-toggle p-2 text-brand-dark"><i class="fa-solid fa-table-cells-large"></i></button>
+                                <button type="button" onclick="setHomeView('list')" data-view="list" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-list"></i></button>
+                            </div>
                         </div>
-                        <!-- Product count -->
-                        <button type="button" onclick="toggleAllHomeProducts()" class="plain-btn flex items-center justify-center px-2 sm:px-4 min-w-0 whitespace-nowrap overflow-hidden" id="home-product-count">8 PRODUCTS</button>
-                        <!-- Sort + Filter -->
-                        <div class="flex items-center justify-center gap-2">
-                            <div id="home-sort-wrap" class="relative flex items-center w-auto sm:w-full max-w-[16rem] mx-auto" onmouseenter="openHomeSort()" onmouseleave="closeHomeSort()">
-                                <button type="button" id="home-sort" onclick="openHomeSort()" aria-haspopup="listbox" aria-expanded="false" class="appearance-none bg-transparent uppercase tracking-wider text-gray-600 py-4 pl-2 pr-5 sm:pr-7 focus:outline-none cursor-pointer text-left w-full">
+                        <!-- Sort -->
+                        <div class="flex items-center justify-end">
+                            <div id="home-sort-wrap" class="relative flex items-center w-auto" onmouseenter="openHomeSort()" onmouseleave="closeHomeSort()">
+                                <button type="button" id="home-sort" onclick="openHomeSort()" aria-haspopup="listbox" aria-expanded="false" class="appearance-none bg-transparent uppercase tracking-wider text-gray-600 py-4 pl-2 pr-2 hover:text-brand-dark focus:outline-none cursor-pointer flex items-center gap-1 whitespace-nowrap">
                                     <span id="home-sort-label">Sort by</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] pointer-events-none"></i>
                                 </button>
-                                <i class="fa-solid fa-chevron-down absolute right-1.5 sm:right-3 text-[10px] pointer-events-none"></i>
-                                <div id="home-sort-menu" class="hidden absolute right-0 top-full z-50 w-full bg-white shadow-xl normal-case tracking-normal">
+                                <div id="home-sort-menu" class="hidden absolute right-0 top-full z-50 w-48 bg-white shadow-xl normal-case tracking-normal">
                                     <button type="button" onclick="selectHomeSort('featured','Sort by')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Sort by</button>
                                     <button type="button" onclick="selectHomeSort('newest','Newest')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Newest</button>
                                     <button type="button" onclick="selectHomeSort('best','Best selling')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Best selling</button>
@@ -1034,7 +1034,6 @@
                                     <button type="button" onclick="selectHomeSort('price-desc','Price ↓')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Price ↓</button>
                                 </div>
                             </div>
-                            <button type="button" onclick="toggleAdvancedFilter()" class="plain-btn uppercase tracking-wider py-4 pl-3 pr-1 hover:text-brand-dark ml-auto flex items-center gap-1 shrink-0"><i class="fa-solid fa-filter"></i>Filter</button>
                         </div>
                     </div>
                 </div>
@@ -1122,23 +1121,27 @@
                 </div>
             </div>
 
-            <!-- Shop toolbar (count / categories / sort / filter) -->
+            <!-- Shop toolbar (filter / views / sort) -->
             <div id="shop-toolbar" class="bg-white border-b border-gray-200 sticky top-20 z-30 transition-shadow duration-300">
                 <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="grid grid-cols-[auto_1fr_1fr] items-stretch text-xs sm:text-sm uppercase tracking-wider text-gray-600">
-                        <div class="hidden sm:flex items-center gap-1 pr-4 border-r border-gray-200">
-                            <button type="button" onclick="setShopView('small')" data-view="small" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-table-cells"></i></button>
-                            <button type="button" onclick="setShopView('medium')" data-view="medium" class="view-toggle p-2 text-brand-dark"><i class="fa-solid fa-table-cells-large"></i></button>
-                            <button type="button" onclick="setShopView('list')" data-view="list" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-list"></i></button>
+                    <div class="grid grid-cols-[auto_1fr] items-stretch text-xs sm:text-sm uppercase tracking-wider text-gray-600">
+                        <!-- Filter + view modes -->
+                        <div class="flex items-stretch">
+                            <button type="button" onclick="toggleAdvancedFilter()" class="plain-btn uppercase tracking-wider py-4 pr-3 hover:text-brand-dark flex items-center gap-1 shrink-0"><i class="fa-solid fa-filter"></i>Filter</button>
+                            <div class="hidden sm:flex items-center gap-1 px-3 border-l border-gray-200">
+                                <button type="button" onclick="setShopView('small')" data-view="small" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-table-cells"></i></button>
+                                <button type="button" onclick="setShopView('medium')" data-view="medium" class="view-toggle p-2 text-brand-dark"><i class="fa-solid fa-table-cells-large"></i></button>
+                                <button type="button" onclick="setShopView('list')" data-view="list" class="view-toggle p-2 text-gray-400 hover:text-brand-dark"><i class="fa-solid fa-list"></i></button>
+                            </div>
                         </div>
-                        <button type="button" onclick="toggleAllShopProducts()" class="plain-btn flex items-center justify-center px-2 sm:px-4 min-w-0 whitespace-nowrap overflow-hidden" id="shop-count-btn">0 PRODUCTS</button>
-                        <div class="flex items-center justify-center gap-2">
-                            <div id="shop-sort-wrap" class="relative flex items-center w-auto sm:w-full max-w-[16rem] mx-auto" onmouseenter="openShopSort()" onmouseleave="closeShopSort()">
-                                <button type="button" id="shop-sort" onclick="openShopSort()" aria-haspopup="listbox" aria-expanded="false" class="appearance-none bg-transparent uppercase tracking-wider text-gray-600 py-4 pl-2 pr-5 sm:pr-7 focus:outline-none cursor-pointer text-left w-full">
+                        <!-- Sort -->
+                        <div class="flex items-center justify-end">
+                            <div id="shop-sort-wrap" class="relative flex items-center w-auto" onmouseenter="openShopSort()" onmouseleave="closeShopSort()">
+                                <button type="button" id="shop-sort" onclick="openShopSort()" aria-haspopup="listbox" aria-expanded="false" class="appearance-none bg-transparent uppercase tracking-wider text-gray-600 py-4 pl-2 pr-2 hover:text-brand-dark focus:outline-none cursor-pointer flex items-center gap-1 whitespace-nowrap">
                                     <span id="shop-sort-label">Sort by</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] pointer-events-none"></i>
                                 </button>
-                                <i class="fa-solid fa-chevron-down absolute right-1.5 sm:right-3 text-[10px] pointer-events-none"></i>
-                                <div id="shop-sort-menu" class="hidden absolute right-0 top-full z-50 w-full bg-white shadow-xl normal-case tracking-normal">
+                                <div id="shop-sort-menu" class="hidden absolute right-0 top-full z-50 w-48 bg-white shadow-xl normal-case tracking-normal">
                                     <button type="button" onclick="selectShopSort('featured','Sort by')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Sort by</button>
                                     <button type="button" onclick="selectShopSort('newest','Newest')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Newest</button>
                                     <button type="button" onclick="selectShopSort('best','Best selling')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Best selling</button>
@@ -1147,7 +1150,6 @@
                                     <button type="button" onclick="selectShopSort('price-desc','Price ↓')" class="home-sort-option block w-full text-left px-2 py-4 text-gray-700 hover:bg-brand-dark hover:text-white">Price ↓</button>
                                 </div>
                             </div>
-                            <button type="button" onclick="toggleAdvancedFilter()" class="plain-btn uppercase tracking-wider py-4 pl-3 pr-1 hover:text-brand-dark ml-auto flex items-center gap-1 shrink-0"><i class="fa-solid fa-filter"></i>Filter</button>
                         </div>
                     </div>
                 </div>
@@ -1823,14 +1825,16 @@
                         wearadinkra is a Ghanaian fashion brand dedicated to preserving, celebrating, and promoting Ghana’s rich cultural heritage through the timeless beauty and wisdom of Adinkra symbols.
                     </p>
                     <a href="#" onclick="showPage('story')" class="inline-block bg-white text-brand-dark text-xs font-medium uppercase tracking-widest px-5 py-2.5 hover:bg-brand-sea hover:text-white transition-colors">Read more</a>
-                    <div class="flex flex-wrap gap-4 mt-8">
-                        <a href="#" aria-label="Facebook" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-facebook-f text-lg"></i></a>
-                        <a href="#" aria-label="Instagram" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-instagram text-lg"></i></a>
-                        <a href="#" aria-label="X" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-x-twitter text-lg"></i></a>
-                        <a href="#" aria-label="TikTok" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-tiktok text-lg"></i></a>
-                        <a href="#" aria-label="YouTube" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-youtube text-lg"></i></a>
-                        <a href="#" aria-label="WhatsApp" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-whatsapp text-lg"></i></a>
-                        <a href="#" aria-label="Twitter" class="footer-social text-[#F5C542] hover:text-white transition-colors"><i class="fa-brands fa-twitter text-lg"></i></a>
+                    <div class="mt-8">
+                        <p class="text-[10px] uppercase tracking-[0.25em] text-white/60 mb-3">Follow us</p>
+                        <div class="inline-flex flex-wrap items-center gap-2 border border-white/20 bg-white/5 p-2">
+                            <a href="#" aria-label="Facebook" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-facebook-f text-sm"></i></a>
+                            <a href="#" aria-label="Instagram" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-instagram text-sm"></i></a>
+                            <a href="#" aria-label="TikTok" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-tiktok text-sm"></i></a>
+                            <a href="#" aria-label="YouTube" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-youtube text-sm"></i></a>
+                            <a href="#" aria-label="WhatsApp" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-whatsapp text-sm"></i></a>
+                            <a href="#" aria-label="Twitter" class="footer-social w-9 h-9 rounded-full flex items-center justify-center text-[#F5C542] hover:bg-[#F5C542] hover:text-brand-dark transition-colors"><i class="fa-brands fa-twitter text-sm"></i></a>
+                        </div>
                     </div>
                 </div>
                 <div>
@@ -2090,20 +2094,6 @@
         }
         function closePromoModal() { const m = document.getElementById('promo-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
         function claimPromo() { closePromoModal(); showPage('shop'); }
-        function toggleAllHomeProducts() {
-            const grid = document.getElementById('home-featured-grid');
-            const label = document.getElementById('home-product-count');
-            if (!grid || !label) return;
-            if (grid.dataset.all === '1') {
-                grid.innerHTML = products.length ? products.slice(0, 8).map(generateProductHTML).join('') : emptyStateHTML();
-                grid.dataset.all = '0';
-                label.innerText = Math.min(8, products.length) + ' PRODUCTS';
-            } else {
-                grid.innerHTML = products.map(generateProductHTML).join('');
-                grid.dataset.all = '1';
-                label.innerText = products.length + ' PRODUCTS · SHOW FEATURED';
-            }
-        }
         async function loadUsdRate() {
             try {
                 const r = await fetch('api/rate.php').then(x => x.json());
@@ -2121,10 +2111,6 @@
         }
 
         let activeCategory = 'all';
-        function updateHomeCount(n) {
-            const el = document.getElementById('home-product-count');
-            if (el) el.innerText = n + ' PRODUCTS';
-        }
         function openSelectOnHover(el) {
             try { if (el && el.showPicker) el.showPicker(); } catch (err) { /* browsers may require a click */ }
         }
@@ -2192,7 +2178,6 @@
             else if (value === 'name') list.sort((a, b) => a.name.localeCompare(b.name));
             const grid = document.getElementById('home-featured-grid');
             if (grid) grid.innerHTML = list.slice(0, 8).map(generateProductHTML).join('');
-            updateHomeCount(list.length);
         }
         function setHomeView(view) {
             const grid = document.getElementById('home-featured-grid');
@@ -2526,11 +2511,9 @@
             // Show 8 products (4 per column row x2) on home page
             const grid = document.getElementById('home-featured-grid');
             grid.innerHTML = products.length ? products.slice(0, 8).map(generateProductHTML).join('') : emptyStateHTML();
-            updateHomeCount(products.length);
         }
 
         let shopPage = 1;
-        let shopShowAll = false;
         const SHOP_PER_PAGE = 8;
         function sortedShopProducts() {
             const list = products.slice();
@@ -2541,7 +2524,6 @@
             else if (shopSortMode === 'best') list.sort((a, b) => (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
             return list;
         }
-        function toggleAllShopProducts() { shopShowAll = !shopShowAll; renderShopPage(); }
         function renderShopPage(page) {
             if (page) shopPage = page;
             const grid = document.getElementById('shop-product-grid');
@@ -2549,17 +2531,14 @@
             const total = sorted.length;
             const totalPages = Math.ceil(total / SHOP_PER_PAGE);
             const start = (shopPage - 1) * SHOP_PER_PAGE;
-            const pageItems = shopShowAll ? sorted : sorted.slice(start, start + SHOP_PER_PAGE);
+            const pageItems = sorted.slice(start, start + SHOP_PER_PAGE);
             grid.innerHTML = pageItems.length ? pageItems.map(generateProductHTML).join('') : emptyStateHTML();
             const count = document.getElementById('shop-item-count');
             if (count) count.innerText = 'Showing ' + pageItems.length + ' of ' + total + ' products';
-            const countBtn = document.getElementById('shop-count-btn');
-            if (countBtn) countBtn.innerText = total + (total === 1 ? ' PRODUCT' : ' PRODUCTS');
 
             // Render pagination
             const pag = document.querySelector('#page-shop .flex.justify-center.mt-10');
-            if (pag && shopShowAll) { pag.innerHTML = ''; }
-            else if (pag) {
+            if (pag) {
                 let html = '';
                 for (let i = 1; i <= totalPages; i++) {
                     if (i === shopPage) html += '<span class="px-3 py-1 bg-brand-dark text-white">' + i + '</span>';
@@ -3215,12 +3194,7 @@
                 const result = await waApi('register', { name, email, phone, password });
                 if (!result.ok) { authMessage(result.message, true); return; }
                 setOtpPanel(true);
-                authMessage(result.message + (result.dev ? ' (Dev codes are shown below.)' : ''), false);
-                if (result.dev) {
-                    const dev = document.getElementById('otp-dev');
-                    dev.classList.remove('hidden');
-                    dev.innerHTML = '<strong>DEV:</strong> OTP (sent to both): ' + result.dev.otp + '<br>Activate: <a class="underline" href="' + result.dev.activation_link + '">' + result.dev.activation_link + '</a>';
-                }
+                authMessage(result.message, false);
             } else {
                 const loginId = email || phone;
                 if (!loginId) { authMessage('Enter your email or phone number.', true); return; }
@@ -3250,11 +3224,6 @@
             const result = await waApi('resend_otp', { email });
             const msg = document.getElementById('otp-msg');
             if (msg) { msg.textContent = result.message; msg.className = 'text-xs text-center ' + (result.ok ? 'text-green-700' : 'text-red-600'); }
-            if (result.dev) {
-                const dev = document.getElementById('otp-dev');
-                dev.classList.remove('hidden');
-                dev.innerHTML = '<strong>DEV:</strong> OTP (sent to both): ' + result.dev.otp + '<br>Activate: <a class="underline" href="' + result.dev.activation_link + '">' + result.dev.activation_link + '</a>';
-            }
         }
         let resetToken = null;
         function forgotMessage(text, ok) {
@@ -3286,11 +3255,6 @@
             if (result.ok) {
                 document.getElementById('forgot-otp').classList.remove('hidden');
                 document.getElementById('forgot-verify-btn').classList.remove('hidden');
-            }
-            if (result.dev) {
-                const dev = document.getElementById('forgot-dev');
-                dev.classList.remove('hidden');
-                dev.innerHTML = '<strong>DEV:</strong> Reset OTP: ' + result.dev.otp;
             }
         }
         async function forgotVerify() {
@@ -3591,39 +3555,57 @@
 
         // --- ADVANCED FILTER DRAWER ---
         function toggleAdvancedFilter() { openAdvFilterDrawer(); }
+        let advDrawerTimer = null;
         function openAdvFilterDrawer() {
             const overlay = document.getElementById('adv-filter-overlay');
             const panel = document.getElementById('adv-filter-panel');
+            if (advDrawerTimer) { clearTimeout(advDrawerTimer); advDrawerTimer = null; }
             overlay.classList.remove('hidden');
-            setTimeout(() => {
+            advDrawerTimer = setTimeout(() => {
                 overlay.classList.remove('opacity-0');
                 panel.classList.remove('translate-x-full');
+                advDrawerTimer = null;
             }, 10);
             initAccordion();
         }
         function closeAdvFilterDrawer() {
             const overlay = document.getElementById('adv-filter-overlay');
             const panel = document.getElementById('adv-filter-panel');
+            if (advDrawerTimer) { clearTimeout(advDrawerTimer); advDrawerTimer = null; }
             panel.classList.add('translate-x-full');
             overlay.classList.add('opacity-0');
-            setTimeout(() => overlay.classList.add('hidden'), 300);
-        }
-        function filterCategoryFromDrawer(category) {
-            filterByCategory(category, null);
-            closeAdvFilterDrawer();
+            advDrawerTimer = setTimeout(() => { overlay.classList.add('hidden'); advDrawerTimer = null; }, 300);
         }
         function initFilterCategoryCounts() {
             const box = document.getElementById('adv-cat-list');
             if (!box) return;
             const cats = getAppCategories(true);
+            const icons = { 'All': 'fa-border-all', 'African Shirt': 'fa-shirt', 'Kowa African Wear': 'fa-mask', 'Kimono Outfits': 'fa-scissors', 'T-shirts': 'fa-shirt', 'Kowa Outfit': 'fa-person', 'Children': 'fa-child' };
             box.innerHTML = cats.map(cat => {
-                const val = cat === 'All' ? 'all' : cat;
                 const label = cat === 'All' ? 'All Products' : cat;
-                const count = val === 'all' ? products.length : products.filter(p => p.category === cat).length;
-                const icons = { 'All': 'fa-border-all', 'African Shirt': 'fa-shirt', 'Kowa African Wear': 'fa-mask', 'Kimono Outfits': 'fa-scissors', 'T-shirts': 'fa-shirt', 'Kowa Outfit': 'fa-person', 'Children': 'fa-child' };
+                const list = cat === 'All' ? products.slice() : products.filter(p => p.category === cat);
                 const icon = icons[cat] || 'fa-tag';
-                return '<button onclick="filterCategoryFromDrawer(\'' + String(val).replace(/'/g, "\\'") + '\')" class="w-full text-left px-4 py-3 border border-gray-200 hover:border-brand-dark hover:bg-gray-50 flex items-center justify-between"><span class="flex items-center gap-2"><i class="fa-solid ' + icon + ' text-brand-sea w-4"></i>' + escapeHtml(label) + '</span><span class="cat-count text-gray-400 text-xs" data-cat="' + escapeHtml(cat) + '">' + count + '</span></button>';
+                const items = list.length
+                    ? list.map(p => '<button type="button" onclick="openProduct(' + p.id + '); closeAdvFilterDrawer();" class="group w-full flex items-center gap-3 px-4 py-2 text-left border-t border-gray-100 transition-colors hover:bg-brand-sea"><img src="' + escapeHtml(p.image || '') + '" alt="" class="w-9 h-9 object-cover bg-gray-50 shrink-0"><span class="flex-1 min-w-0 text-xs text-gray-700 group-hover:text-white transition-colors truncate">' + escapeHtml(p.name) + '</span><span class="text-[11px] text-gray-400 group-hover:text-white transition-colors shrink-0">' + formatPrice(p.price) + '</span></button>').join('')
+                    : '<p class="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">No products in this category</p>';
+                return '<div class="border border-gray-200">' +
+                    '<button type="button" onclick="toggleCategoryDropdown(this)" aria-expanded="false" class="w-full text-left px-4 py-3 hover:border-brand-dark hover:bg-gray-50 flex items-center justify-between">' +
+                        '<span class="flex items-center gap-2"><i class="fa-solid ' + icon + ' text-brand-sea w-4"></i>' + escapeHtml(label) + '</span>' +
+                        '<span class="flex items-center gap-2"><span class="cat-count text-gray-400 text-xs" data-cat="' + escapeHtml(cat) + '">' + list.length + '</span><i class="fa-solid fa-chevron-down text-[10px] text-gray-400 transition-transform"></i></span>' +
+                    '</button>' +
+                    '<div class="hidden cat-products">' + items + '</div>' +
+                '</div>';
             }).join('');
+        }
+        function toggleCategoryDropdown(btn) {
+            const panel = btn.nextElementSibling;
+            const wasOpen = !panel.classList.contains('hidden');
+            document.querySelectorAll('#adv-cat-list .cat-products').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('#adv-cat-list button[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            if (!wasOpen) {
+                panel.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            }
         }
         function applyAdvancedFilter() {
             const min = parseFloat(document.getElementById('adv-min-price').value) || 0;
@@ -3635,7 +3617,6 @@
             if (shopGrid) shopGrid.innerHTML = filtered.length ? filtered.map(generateProductHTML).join('') : emptyStateHTML();
             const count = document.getElementById('shop-item-count');
             if (count) count.innerText = 'Showing ' + filtered.length + ' products';
-            updateHomeCount(filtered.length);
         }
         function resetAdvancedFilter() {
             document.getElementById('adv-min-price').value = '';
@@ -3761,7 +3742,6 @@
             if (shopGrid) shopGrid.innerHTML = filtered.length ? filtered.map(generateProductHTML).join('') : emptyStateHTML();
             const count = document.getElementById('shop-item-count');
             if (count) count.innerText = 'Showing ' + filtered.length + ' products';
-            updateHomeCount(filtered.length);
         }
 
         // --- ZOOM ---
@@ -4288,14 +4268,15 @@
         }
         function moveHeroPanel(dir) { goToHeroPanel(heroPanelIndex + dir); }
         function startHeroPanels() {
-            // On mobile the panels are stacked vertically — nothing to auto-advance.
             stopHeroPanels();
+            if (window.innerWidth >= 1024) return;
+            heroPanelTimer = setInterval(() => moveHeroPanel(1), 4000);
         }
         function stopHeroPanels() { if (heroPanelTimer) clearInterval(heroPanelTimer); }
         function resetHeroPanels() { stopHeroPanels(); startHeroPanels(); }
         function initHeroPanels() {
             const wrap = document.getElementById('hero-panels');
-            if (!wrap || window.innerWidth < 1024) return;
+            if (!wrap) return;
             let x = 0;
             wrap.addEventListener('touchstart', (e) => { x = e.changedTouches[0].screenX; }, { passive: true });
             wrap.addEventListener('touchend', (e) => {

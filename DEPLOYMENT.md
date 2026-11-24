@@ -27,7 +27,7 @@ cp api/config.example.php api/config.php
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Your live MySQL credentials. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Fill these to send email over SMTP (recommended). Gmail needs an App Password, port 587, `tls`. Leave `SMTP_HOST` empty to use PHP `mail()` instead. |
 | `MAIL_FROM`, `MAIL_FROM_NAME` | Use an address that exists on your hosting account. **The domain must match the live site** (`wearadinkrah.com`) or SPF/DKIM will reject the mail. If it does not match `APP_URL`, the mailer automatically falls back to `no-reply@<site domain>` and logs the correction to `api/storage/mail.log`. |
-| `DEV_MODE` | Keep `false` (never expose OTPs in API responses). |
+| `DEV_MODE` | Deprecated — no longer used. OTPs and activation links are never returned to the browser; codes are delivered only by email and SMS. |
 | `MAIL_LOG_ONLY` | Keep `false`. Set `true` **only** for local testing with no mail server — emails are then written to `api/storage/mail.log` and reported as sent. |
 | `PAYSTACK_PUBLIC_KEY`, `PAYSTACK_SECRET_KEY` | Replace the test keys with live keys before accepting payments. |
 | `PAYSTACK_CA_BUNDLE` | Leave empty on most hosts. If checkout fails with `SSL certificate problem`, set this to the absolute path of your host's `cacert.pem`. |

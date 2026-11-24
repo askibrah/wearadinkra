@@ -54,7 +54,7 @@ define('ADMIN_NOTIFY_PHONE', '');
 define('MAIL_FROM', 'no-reply@wearadinkrah.com');
 define('MAIL_FROM_NAME', APP_NAME);
 define('MAIL_LOG', __DIR__ . '/storage/mail.log');
-define('DEV_MODE', false); // Production-safe: never expose OTPs/activation links to the browser. Set true temporarily for local testing.
+define('DEV_MODE', false); // Deprecated — has no effect. Codes are never exposed to the browser.
 define('MAIL_LOG_ONLY', false); // Local testing: write every email to api/storage/mail.log and report success without sending. Keep false on the live server.
 
 /* ---------------------------------------------------------------
@@ -63,10 +63,10 @@ define('MAIL_LOG_ONLY', false); // Local testing: write every email to api/stora
  * For Gmail: host=smtp.gmail.com port=587 secure=tls user=your@gmail.com
  * pass must be an App Password (not your normal account password).
  * --------------------------------------------------------------- */
-define('SMTP_HOST', '');        // e.g. smtp.gmail.com
+define('SMTP_HOST', 'mail.wearadinkrah.com');        // e.g. smtp.gmail.com
 define('SMTP_PORT', 587);       // 587 (tls) or 465 (ssl)
-define('SMTP_USER', '');        // SMTP username / email
-define('SMTP_PASS', '');        // SMTP password / app password
+define('SMTP_USER', 'no-reply@wearadinkra.com');        // SMTP username / email
+define('SMTP_PASS', '$Scientist2026');        // SMTP password / app password
 define('SMTP_SECURE', 'tls');   // 'tls', 'ssl' or 'none'
 
 /* Paystack (test keys — replace with live keys in production) */
