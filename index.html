@@ -405,6 +405,22 @@
             animation: supportPulse 2.4s ease-in-out infinite;
         }
         .about-content { border-radius: 2px; }
+        #page-story .about-content p { color: #0B132B !important; }
+        /* Footer: solid blue-black with a faint tiling of Adinkra symbols */
+        footer { background-image: none !important; background-color: #0B132B !important; }
+        .footer-adinkra-pattern {
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            opacity: .16;
+            background-color: #8CB9E8;
+            -webkit-mask-image: url('assets/svg/adinkra-3.svg'), url('assets/svg/adinkra-7.svg');
+            -webkit-mask-size: 48px 48px, 34px 34px;
+            -webkit-mask-position: 0 0, 17px 21px;
+            -webkit-mask-repeat: repeat, repeat;
+            mask-image: url('assets/svg/adinkra-3.svg'), url('assets/svg/adinkra-7.svg');
+            mask-size: 48px 48px, 34px 34px;
+            mask-position: 0 0, 17px 21px;
+            mask-repeat: repeat, repeat;
+        }
         .about-block { margin-bottom: 4rem; }
         .about-eyebrow { font-size: 1.4rem; letter-spacing: .28em; text-transform: uppercase; color: #1C5D99; font-weight: 700; text-align: center; }
         .about-title { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif; font-size: 1.6rem; color: #0B132B; text-align: center; margin: .6rem 0 1.6rem; }
@@ -1827,8 +1843,8 @@
     </section>
 
     <!-- Footer -->
-    <footer class="bg-brand-dark text-white pt-16 pb-8 relative" style="background-image: url('assets/images/footer-bg.png'); background-size: cover; background-repeat: no-repeat; background-position: center;">
-        <div class="absolute inset-0 bg-brand-dark/40"></div>
+    <footer class="bg-brand-dark text-white pt-16 pb-8 relative">
+        <div class="footer-adinkra-pattern" aria-hidden="true"></div>
         <div class="relative z-10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
