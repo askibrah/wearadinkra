@@ -52,7 +52,11 @@ function wa_send_email(string $to, string $subject, string $html): bool
         return true;
     }
 
-    if (defined('SMTP_HOST') && SMTP_HOST !== '') {
+    // PHP mail() is the default — on cPanel it hands off to the account's local MTA,
+    // which avoids the remote SMTP/TLS handshake entirely. Set MAIL_TRANSPORT to
+    // 'smtp' in config.php only if you specifically want authenticated SMTP.
+    $transport = defined('MAIL_TRANSPORT') ? strtolower((string) MAIL_TRANSPORT) : 'mail';
+    if ($transport === 'smtp' && defined('SMTP_HOST') && SMTP_HOST !== '') {
         $ok = wa_smtp_send($to, $subject, $html, $from, $fromName);
         if (!$ok) {
             wa_log('api/storage/mail.log', date('c') . " !! SMTP MAIL FAILED -> {$to} | {$subject}" . PHP_EOL);
@@ -64,12 +68,14 @@ function wa_send_email(string $to, string $subject, string $html): bool
     $headers .= "Content-type: text/html; charset=UTF-8\r\n";
     $headers .= 'From: ' . $fromName . ' <' . $from . ">\r\n";
     $headers .= 'Reply-To: ' . $fromName . ' <' . $from . ">\r\n";
+    $headers .= 'Return-Path: <' . $from . ">\r\n";
     $headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
 
     $params = '-f ' . $from;
     $sent = @mail($to, $subject, $html, $headers, $params);
     if (!$sent) {
-        wa_log('api/storage/mail.log', date('c') . " !! MAIL() FAILED -> {$to} | {$subject}" . PHP_EOL);
+        $err = error_get_last();
+        wa_log('api/storage/mail.log', date('c') . " !! MAIL() FAILED -> {$to} | {$subject}" . (($err && isset($err['message'])) ? ' | ' . $err['message'] : '') . PHP_EOL);
     }
     return $sent;
 }

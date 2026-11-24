@@ -58,15 +58,22 @@ define('DEV_MODE', false); // Deprecated — has no effect. Codes are never expo
 define('MAIL_LOG_ONLY', false); // Local testing: write every email to api/storage/mail.log and report success without sending. Keep false on the live server.
 
 /* ---------------------------------------------------------------
- * SMTP (recommended on a live server — more reliable than mail()).
- * Leave SMTP_HOST empty to use PHP mail() instead.
- * For Gmail: host=smtp.gmail.com port=587 secure=tls user=your@gmail.com
- * pass must be an App Password (not your normal account password).
+ * Mail transport
+ *
+ * 'mail' (default) uses PHP mail() and the server's local MTA — the right
+ * choice on cPanel. 'smtp' uses the authenticated settings below.
  * --------------------------------------------------------------- */
-define('SMTP_HOST', 'mail.wearadinkrah.com');        // e.g. smtp.gmail.com
+define('MAIL_TRANSPORT', 'mail'); // 'mail' or 'smtp'
+
+/* ---------------------------------------------------------------
+ * SMTP — only used when MAIL_TRANSPORT is 'smtp'.
+ * Leave the values below empty in the repository. Fill them in on the
+ * server in api/config.php, which is git-ignored.
+ * --------------------------------------------------------------- */
+define('SMTP_HOST', '');        // e.g. smtp.gmail.com
 define('SMTP_PORT', 587);       // 587 (tls) or 465 (ssl)
-define('SMTP_USER', 'no-reply@wearadinkra.com');        // SMTP username / email
-define('SMTP_PASS', '$Scientist2026');        // SMTP password / app password
+define('SMTP_USER', '');        // SMTP username / email
+define('SMTP_PASS', '');        // SMTP password / app password
 define('SMTP_SECURE', 'tls');   // 'tls', 'ssl' or 'none'
 
 /* Paystack (test keys — replace with live keys in production) */
