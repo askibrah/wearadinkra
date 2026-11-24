@@ -86,7 +86,14 @@ function wa_smtp_send(string $to, string $subject, string $html, string $from, s
     $remote = ($secure === 'ssl' ? 'ssl://' : '') . $host . ':' . $port;
     $errno = 0;
     $errstr = '';
-    $fp = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT);
+    // cPanel's mail hostname needs SNI/peer_name for the TLS upgrade to verify.
+    $context = stream_context_create([
+        'ssl' => [
+            'peer_name' => $host,
+            'SNI_enabled' => true,
+        ],
+    ]);
+    $fp = @stream_socket_client($remote, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $context);
     if (!$fp) {
         wa_log('api/storage/mail.log', date('c') . " !! SMTP CONNECT FAILED: {$errstr}" . PHP_EOL);
         return false;
@@ -113,11 +120,27 @@ function wa_smtp_send(string $to, string $subject, string $html, string $from, s
     $send('EHLO ' . $hello);
 
     if ($secure === 'tls') {
-        $send('STARTTLS');
-        $crypto = @stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-        if (!$crypto) {
+        $start = $send('STARTTLS');
+        if (!str_starts_with($start, '220')) {
             fclose($fp);
-            wa_log('api/storage/mail.log', date('c') . " !! SMTP STARTTLS FAILED" . PHP_EOL);
+            wa_log('api/storage/mail.log', date('c') . " !! SMTP STARTTLS REJECTED: " . trim($start) . PHP_EOL);
+            return false;
+        }
+        // STREAM_CRYPTO_METHOD_TLS_CLIENT negotiates old TLS on some PHP builds,
+        // which modern cPanel mail servers refuse. Prefer TLS 1.3, then 1.2.
+        $methods = [];
+        foreach (['STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT', 'STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT', 'STREAM_CRYPTO_METHOD_TLS_CLIENT'] as $name) {
+            if (defined($name)) $methods[] = constant($name);
+        }
+        $crypto = false;
+        foreach (array_unique($methods) as $method) {
+            $crypto = @stream_socket_enable_crypto($fp, true, $method);
+            if ($crypto) break;
+        }
+        if (!$crypto) {
+            $err = error_get_last();
+            fclose($fp);
+            wa_log('api/storage/mail.log', date('c') . " !! SMTP STARTTLS FAILED: " . ($err['message'] ?? 'unknown TLS error') . PHP_EOL);
             return false;
         }
         $send('EHLO ' . $hello);
