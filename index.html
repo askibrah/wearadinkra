@@ -2426,19 +2426,14 @@
                 items: snapshot.map(i => i.quantity + 'x ' + i.name).join(', ')
             }).catch(() => {});
 
-            // Notify the admin dashboard (non-blocking).
-            if (waCsrf) {
-                fetch('api/orders.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'add', csrf_token: waCsrf, order_id: orderId,
-                        customer: customer.name, email: customer.email, phone: customer.phone,
-                        total: total, method: method, guest: !account,
-                        items: snapshot.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, image: i.image, size: i.size||'', color: i.color||'', symbol: i.symbol||'', kidAge: i.kidAge||'', kidHeight: i.kidHeight||'', kidSex: i.kidSex||'' }))
-                    })
-                }).catch(() => {});
-            }
+            // Persist to the server so it appears on the admin orders page.
+            // A failed sync is queued and retried on the next page load.
+            syncOrderToServer({
+                action: 'add', order_id: orderId,
+                customer: customer.name, email: customer.email, phone: customer.phone,
+                total: total, method: method, guest: !account,
+                items: snapshot.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, image: i.image, size: i.size || '', color: i.color || '', symbol: i.symbol || '', kidAge: i.kidAge || '', kidHeight: i.kidHeight || '', kidSex: i.kidSex || '' }))
+            });
 
             cart = [];
             updateCartCount();
@@ -3157,6 +3152,41 @@
             } catch (e) {
                 return { ok: false, message: 'Network error. Please try again.' };
             } finally { hideAjaxLoader(); }
+        }
+        async function postOrderToServer(payload) {
+            for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                    waCsrf = null;
+                    await waFetchCsrf();
+                    const res = await fetch('api/orders.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...payload, csrf_token: waCsrf })
+                    });
+                    const j = await res.json().catch(() => ({}));
+                    if (j.ok) return true;
+                    if (/security token/i.test(j.message || '')) continue;
+                } catch (e) { /* network hiccup — retry below */ }
+                await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+            }
+            return false;
+        }
+        function queuePendingOrder(payload) {
+            const q = JSON.parse(localStorage.getItem('wa_pending_orders') || '[]');
+            if (!q.some(x => x && x.order_id === payload.order_id)) q.push(payload);
+            localStorage.setItem('wa_pending_orders', JSON.stringify(q));
+        }
+        async function syncOrderToServer(payload) {
+            if (await postOrderToServer(payload)) return true;
+            queuePendingOrder(payload);
+            return false;
+        }
+        async function flushPendingOrders() {
+            const q = JSON.parse(localStorage.getItem('wa_pending_orders') || '[]');
+            if (!q.length) return;
+            const left = [];
+            for (const p of q) { if (!(await postOrderToServer(p))) left.push(p); }
+            localStorage.setItem('wa_pending_orders', JSON.stringify(left));
         }
         function applySessionUser(user) {
             if (user) localStorage.setItem('wa_user', JSON.stringify(user));
@@ -4619,6 +4649,7 @@
             handleProductDeepLink();
             await loadSocialConfig();
             checkSession();
+            flushPendingOrders();
             showPromoModal();
 
             const socialProvider = new URLSearchParams(location.search).get('social_provider');
