@@ -109,7 +109,12 @@ try {
             if (is_array($it)) {
                 $label = trim((string)($it['name'] ?? $it['title'] ?? $it['product'] ?? 'Item'));
                 $qty = isset($it['qty']) ? (int)$it['qty'] : (isset($it['quantity']) ? (int)$it['quantity'] : 1);
-                $parts[] = $label . ($qty > 1 ? ' x' . $qty : '');
+                $extras = [];
+                foreach (['symbol' => 'Symbol', 'size' => 'Size', 'color' => 'Color', 'kidAge' => 'Age', 'kidHeight' => 'Height'] as $key => $labelText) {
+                    $value = trim((string)($it[$key] ?? ''));
+                    if ($value !== '') $extras[] = $labelText . ': ' . $value;
+                }
+                $parts[] = $label . ($qty > 1 ? ' x' . $qty : '') . ($extras ? ' (' . implode(', ', $extras) . ')' : '');
             }
         }
         if ($parts) $itemList = implode(', ', $parts);
