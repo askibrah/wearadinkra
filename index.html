@@ -829,11 +829,15 @@
             <p id="auth-msg" class="text-sm text-center mt-4 text-red-600"></p>
             <div id="otp-panel" class="hidden mt-6 border-t border-gray-200 pt-6 space-y-3">
                 <p class="text-sm font-medium text-brand-dark">Verify your account</p>
-                <p class="text-xs text-gray-500">Enter the code sent to your email, then open the activation link in your email.</p>
+                <p class="text-xs text-gray-500">Enter the code from your email, or open the activation link — either one activates your account.</p>
                 <input type="text" id="otp-code" placeholder="Verification code" class="w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea tracking-widest">
-                <button onclick="verifyOtp()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Verify Codes</button>
-                <button onclick="resendOtp()" class="plain-btn w-full text-xs text-brand-sea underline hover:text-brand-dark">Resend codes</button>
+                <button id="otp-verify-btn" onclick="verifyOtp()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Verify &amp; Activate</button>
+                <p id="otp-countdown" class="text-xs text-center text-gray-500"></p>
+                <button id="otp-resend-btn" onclick="resendOtp()" class="plain-btn w-full text-xs text-brand-sea underline hover:text-brand-dark">Resend codes</button>
                 <p id="otp-msg" class="text-xs text-center"></p>
+                <p id="otp-login-row" class="hidden text-center pt-2">
+                    <button onclick="goToLoginFromOtp()" class="w-full bg-brand-dark text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-sea transition-colors">Log in to your account →</button>
+                </p>
             </div>
             <p id="auth-switch-row" class="text-sm text-center mt-6 text-gray-500">
                 <span id="auth-toggle-text">Don't have an account?</span>
@@ -3193,8 +3197,11 @@
                 if (!email) { authMessage('Enter a valid email address.', true); return; }
                 const result = await waApi('register', { name, email, phone, password });
                 if (!result.ok) { authMessage(result.message, true); return; }
+                resetOtpPanel();
+                pendingVerifyEmail = email;
                 setOtpPanel(true);
                 authMessage(result.message, false);
+                await refreshVerificationStatus();
             } else {
                 const loginId = email || phone;
                 if (!loginId) { authMessage('Enter your email or phone number.', true); return; }
@@ -3211,19 +3218,79 @@
                 setTimeout(() => closeAuth(), 700);
             }
         }
+        // --- Verification countdowns ---
+        let pendingVerifyEmail = '';
+        let otpCountdownTimer = null;
+        let otpDeadline = 0, linkDeadline = 0;
+        function fmtTime(seconds) {
+            const s = Math.max(0, Math.floor(seconds));
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            return (h ? String(h).padStart(2, '0') + ':' : '') + String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+        }
+        function renderOtpCountdown() {
+            const el = document.getElementById('otp-countdown');
+            if (!el) return;
+            const o = otpDeadline - Date.now(), l = linkDeadline - Date.now();
+            if (o <= 0 && l <= 0) {
+                el.textContent = 'Codes expired — resend to get new ones.';
+                clearInterval(otpCountdownTimer); otpCountdownTimer = null; return;
+            }
+            const parts = [];
+            if (o > 0) parts.push('Code ' + fmtTime(o / 1000));
+            if (l > 0) parts.push('Link ' + fmtTime(l / 1000));
+            el.textContent = parts.join('  ·  ');
+        }
+        function startOtpCountdown(otpSeconds, linkSeconds) {
+            otpDeadline = Date.now() + (Number(otpSeconds) || 0) * 1000;
+            linkDeadline = Date.now() + (Number(linkSeconds) || 0) * 1000;
+            if (otpCountdownTimer) clearInterval(otpCountdownTimer);
+            otpCountdownTimer = setInterval(renderOtpCountdown, 1000);
+            renderOtpCountdown();
+        }
+        function resetOtpPanel() {
+            pendingVerifyEmail = '';
+            const loginRow = document.getElementById('otp-login-row'); if (loginRow) loginRow.classList.add('hidden');
+            const verify = document.getElementById('otp-verify-btn'); if (verify) verify.classList.remove('hidden');
+            const resend = document.getElementById('otp-resend-btn'); if (resend) resend.classList.remove('hidden');
+            const code = document.getElementById('otp-code'); if (code) code.value = '';
+        }
+        function showActivatedState() {
+            if (otpCountdownTimer) { clearInterval(otpCountdownTimer); otpCountdownTimer = null; }
+            const cd = document.getElementById('otp-countdown'); if (cd) cd.textContent = 'Account activated.';
+            const msg = document.getElementById('otp-msg');
+            if (msg) { msg.textContent = 'Account activated. You can now log in.'; msg.className = 'text-xs text-center text-green-700'; }
+            const loginRow = document.getElementById('otp-login-row'); if (loginRow) loginRow.classList.remove('hidden');
+            const verify = document.getElementById('otp-verify-btn'); if (verify) verify.classList.add('hidden');
+            const resend = document.getElementById('otp-resend-btn'); if (resend) resend.classList.add('hidden');
+        }
+        function goToLoginFromOtp() {
+            if (pendingVerifyEmail) document.getElementById('auth-email').value = pendingVerifyEmail;
+            setOtpPanel(false); openAuth('login'); authMessage('Account activated. Please log in.', false);
+        }
+        async function refreshVerificationStatus() {
+            const email = pendingVerifyEmail || document.getElementById('auth-email').value.trim();
+            if (!email) return;
+            const result = await waApi('verification_status', { email }).catch(() => null);
+            if (!result || !result.ok) return;
+            if (result.active) { showActivatedState(); return; }
+            startOtpCountdown(result.otp_seconds || 0, result.activation_seconds || 0);
+        }
         async function verifyOtp() {
-            const email = document.getElementById('auth-email').value.trim();
+            const email = pendingVerifyEmail || document.getElementById('auth-email').value.trim();
             const code = document.getElementById('otp-code').value.trim();
             if (!code) return;
             const result = await waApi('verify_otp', { email, otp: code });
+            if (result.ok && result.activated) { showActivatedState(); return; }
             const msg = document.getElementById('otp-msg');
             if (msg) { msg.textContent = result.message; msg.className = 'text-xs text-center ' + (result.ok ? 'text-green-700' : 'text-red-600'); }
         }
         async function resendOtp() {
-            const email = document.getElementById('auth-email').value.trim();
+            const email = pendingVerifyEmail || document.getElementById('auth-email').value.trim();
+            pendingVerifyEmail = email;
             const result = await waApi('resend_otp', { email });
             const msg = document.getElementById('otp-msg');
             if (msg) { msg.textContent = result.message; msg.className = 'text-xs text-center ' + (result.ok ? 'text-green-700' : 'text-red-600'); }
+            if (result.ok) await refreshVerificationStatus();
         }
         let resetToken = null;
         function forgotMessage(text, ok) {
@@ -4446,6 +4513,7 @@
             const socialProvider = new URLSearchParams(location.search).get('social_provider');
             const socialToken = new URLSearchParams(location.search).get('social_token');
             if (socialProvider && socialToken) { openAuth('login'); socialAuth(socialProvider); }
+            if (new URLSearchParams(location.search).get('login') === '1') setTimeout(() => openAuth('login'), 250);
 
             // Accessibility: label icon-only buttons
             document.querySelectorAll('button').forEach(b => {

@@ -64,6 +64,23 @@ function wa_issue_activation(PDO $pdo, int $userId): string
     return $token;
 }
 
+/**
+ * Activate a user through either verification method (OTP or activation link).
+ * Consumes the other method at the same time, so one account can only be
+ * activated once and the unused path stops working immediately.
+ */
+function wa_activate_user(PDO $pdo, int $userId): void
+{
+    $now = wa_now();
+    $stmt = $pdo->prepare('UPDATE users SET status = "active", activated_at = ?, email_verified_at = COALESCE(email_verified_at, ?), phone_verified_at = COALESCE(phone_verified_at, ?) WHERE id = ?');
+    $stmt->execute([$now, $now, $now, $userId]);
+    $stmt = $pdo->prepare('UPDATE activation_tokens SET used_at = ? WHERE user_id = ? AND used_at IS NULL');
+    $stmt->execute([$now, $userId]);
+    $stmt = $pdo->prepare('UPDATE otp_codes SET used_at = ? WHERE user_id = ? AND used_at IS NULL');
+    $stmt->execute([$now, $userId]);
+    wa_clear_attempts($pdo, 'user:' . $userId);
+}
+
 function wa_send_otps(PDO $pdo, array $user, string $otp, string $activationToken): void
 {
     wa_email_activation($user['email'], $user['name'], $activationToken, $otp);
@@ -151,32 +168,50 @@ switch ($action) {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
         if (!$user) wa_json(['ok' => false, 'message' => 'Account not found.'], 404);
-        if ($user['status'] === 'active') wa_json(['ok' => true, 'message' => 'Already verified.']);
+        if ($user['status'] === 'active') wa_json(['ok' => true, 'activated' => true, 'message' => 'Account is already active. You can log in.']);
 
         if (!wa_verify_otp_row($pdo, (int)$user['id'], $otp, 'account')) {
             wa_json(['ok' => false, 'message' => 'Invalid or expired code.'], 422);
         }
-        $stmt = $pdo->prepare('UPDATE users SET email_verified_at = ?, phone_verified_at = ? WHERE id = ?');
-        $stmt->execute([wa_now(), wa_now(), (int)$user['id']]);
+        wa_activate_user($pdo, (int)$user['id']);
 
-        wa_json(['ok' => true, 'message' => 'Code verified. Activate your account with the link sent to your email.']);
+        wa_json(['ok' => true, 'activated' => true, 'message' => 'Account activated. You can now log in.']);
 
     /* ---------- ACTIVATE ---------- */
     case 'activate':
         $token = (string)($input['token'] ?? '');
         if ($token === '') wa_json(['ok' => false, 'message' => 'Missing activation token.'], 422);
-        $stmt = $pdo->prepare('SELECT * FROM activation_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at >= ? LIMIT 1');
-        $stmt->execute([hash('sha256', $token), time()]);
+        $stmt = $pdo->prepare('SELECT t.*, u.status AS user_status FROM activation_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ? ORDER BY t.id DESC LIMIT 1');
+        $stmt->execute([hash('sha256', $token)]);
         $row = $stmt->fetch();
         if (!$row) wa_json(['ok' => false, 'message' => 'This activation link is invalid or has expired.'], 410);
+        if ($row['user_status'] === 'active') wa_json(['ok' => true, 'activated' => true, 'message' => 'Account is already active. You can log in.']);
+        if (!empty($row['used_at']) || (int)$row['expires_at'] < time()) wa_json(['ok' => false, 'message' => 'This activation link is invalid or has expired.'], 410);
 
-        $stmt = $pdo->prepare('UPDATE activation_tokens SET used_at = ? WHERE id = ?');
-        $stmt->execute([wa_now(), (int)$row['id']]);
-        $stmt = $pdo->prepare('UPDATE users SET status = "active", activated_at = ? WHERE id = ?');
-        $stmt->execute([wa_now(), (int)$row['user_id']]);
-        wa_clear_attempts($pdo, 'user:' . (int)$row['user_id']);
+        wa_activate_user($pdo, (int)$row['user_id']);
+        wa_json(['ok' => true, 'activated' => true, 'message' => 'Account activated. You can now log in.']);
 
-        wa_json(['ok' => true, 'message' => 'Account activated. You can now log in.']);
+    /* ---------- VERIFICATION STATUS (countdowns) ---------- */
+    case 'verification_status':
+        $email = strtolower(trim((string)($input['email'] ?? '')));
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        if (!$user) wa_json(['ok' => false, 'message' => 'Account not found.'], 404);
+        if ($user['status'] === 'active') wa_json(['ok' => true, 'active' => true, 'otp_seconds' => 0, 'activation_seconds' => 0]);
+
+        $stmt = $pdo->prepare('SELECT expires_at FROM otp_codes WHERE user_id = ? AND used_at IS NULL AND expires_at >= ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([(int)$user['id'], time()]);
+        $otpExpiry = $stmt->fetchColumn();
+        $stmt = $pdo->prepare('SELECT expires_at FROM activation_tokens WHERE user_id = ? AND used_at IS NULL AND expires_at >= ? ORDER BY id DESC LIMIT 1');
+        $stmt->execute([(int)$user['id'], time()]);
+        $linkExpiry = $stmt->fetchColumn();
+        wa_json([
+            'ok' => true,
+            'active' => false,
+            'otp_seconds' => $otpExpiry ? max(0, (int)$otpExpiry - time()) : 0,
+            'activation_seconds' => $linkExpiry ? max(0, (int)$linkExpiry - time()) : 0,
+        ]);
 
     /* ---------- LOGIN ---------- */
     case 'login':

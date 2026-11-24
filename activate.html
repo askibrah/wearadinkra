@@ -25,6 +25,8 @@
             <p class="mt-4">Activating your account…</p>
         </div>
         <a id="home-link" href="index.html" class="hidden mt-6 inline-block bg-brand-dark text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Continue to Wear Adinkra</a>
+        <a id="login-link" href="index.html?login=1" class="hidden mt-3 w-full block bg-brand-sea text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-brand-dark transition-colors">Log in to your account →</a>
+        <a id="back-link" href="index.html?login=1" class="hidden mt-6 inline-block text-xs text-brand-sea underline hover:text-brand-dark">Back to sign in</a>
     </div>
 
 <script>
@@ -42,13 +44,20 @@ async function api(action, data = {}) {
     const token = new URLSearchParams(location.search).get('token');
     if (!token) {
         status.innerHTML = '<p class="text-red-600">No activation token was provided.</p>';
+        document.getElementById('back-link').classList.remove('hidden');
         return;
     }
     try {
         const result = await api('activate', { token });
         status.innerHTML = '<p class="' + (result.ok ? 'text-green-700' : 'text-red-600') + '">' + result.message + '</p>';
+        if (result.ok) {
+            document.getElementById('login-link').classList.remove('hidden');
+        } else {
+            document.getElementById('back-link').classList.remove('hidden');
+        }
     } catch (e) {
         status.innerHTML = '<p class="text-red-600">Could not reach the activation service.</p>';
+        document.getElementById('back-link').classList.remove('hidden');
     }
     document.getElementById('home-link').classList.remove('hidden');
 })();
