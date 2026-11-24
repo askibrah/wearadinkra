@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -846,14 +846,11 @@
             <p id="forgot-signin" class="hidden text-center mt-4">
                 <button onclick="toggleForgot()" class="plain-btn text-sm font-medium text-brand-sea underline hover:text-brand-dark">← Back to Sign In</button>
             </p>
-            <p class="text-center mt-2">
-                <button id="forgot-toggle" onclick="toggleForgot()" class="plain-btn text-xs text-brand-sea underline hover:text-brand-dark">Forgot password?</button>
-            </p>
             <div id="forgot-panel" class="hidden mt-5 border-t border-gray-200 pt-5 space-y-3">
                 <p class="text-sm font-medium text-brand-dark">Reset your password</p>
                 <p class="text-xs text-gray-500">Enter your email or phone — we will send a code to both.</p>
                 <input type="text" id="forgot-identifier" placeholder="Email or phone number" class="w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                <button onclick="forgotRequest()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Send Code</button>
+                <button id="forgot-send-btn" onclick="forgotRequest()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-dark transition-colors">Send Code</button>
                 <input type="text" id="forgot-otp" placeholder="Reset code" class="hidden w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea tracking-widest">
                 <button id="forgot-verify-btn" onclick="forgotVerify()" class="hidden w-full bg-brand-dark text-white font-medium tracking-widest uppercase py-3 rounded hover:bg-brand-sea transition-colors">Verify Code</button>
                 <input type="password" id="forgot-password" placeholder="New password" class="hidden w-full border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
@@ -1621,7 +1618,7 @@
     <div id="promo-modal" class="fixed inset-0 z-[85] hidden items-center justify-center p-4">
         <div class="absolute inset-0 bg-brand-dark/70 backdrop-blur-sm" onclick="closePromoModal()"></div>
         <div class="promo-card relative w-full max-w-[240px] text-white text-center overflow-hidden" style="background:linear-gradient(145deg,#1C5D99 0%,#0B132B 70%)">
-            <button onclick="closePromoModal()" class="promo-close absolute top-2 right-2 w-7 h-7 bg-white/20 hover:bg-white/30 flex items-center justify-center z-10 text-xs p-0 leading-none shrink-0"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="closePromoModal()" class="promo-close absolute top-2 right-2 w-7 h-7 bg-white/20 hover:bg-white/30 flex items-center justify-center z-10 text-xs p-0 leading-none shrink-0" aria-label="Close promotion"><i class="fa-solid fa-xmark"></i></button>
             <i class="fa-solid fa-gift absolute top-3 left-3 text-brand-light text-base opacity-80"></i>
             <i class="fa-solid fa-star absolute bottom-4 right-3 text-brand-light text-sm opacity-70"></i>
             <div id="promo-adinkra-bg" class="absolute inset-0 overflow-hidden pointer-events-none opacity-25" aria-hidden="true"></div>
@@ -1636,6 +1633,15 @@
                 <button onclick="claimPromo()" class="w-full bg-white text-brand-dark font-bold py-2.5 text-[10px] hover:bg-brand-light transition-colors">Claim My Discount</button>
                 <p class="text-[8px] text-white/60 mt-3">Prices already updated on the store</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Full-size order image viewer -->
+    <div id="image-lightbox" class="fixed inset-0 z-[95] hidden bg-black/85 items-center justify-center p-4" onclick="if(event.target.id==='image-lightbox') closeImageLightbox()">
+        <div class="relative w-full max-w-2xl">
+            <button onclick="closeImageLightbox()" class="absolute -top-10 right-0 text-white text-2xl"><i class="fa-solid fa-xmark"></i></button>
+            <img id="lightbox-img" src="" alt="Order item" class="w-full max-h-[80vh] object-contain">
+            <p id="lightbox-caption" class="text-center text-white text-sm mt-3"></p>
         </div>
     </div>
 
@@ -2096,7 +2102,11 @@
                 sessionStorage.setItem('wa_promo_seen', '1');
             } catch (e) { /* ignore */ }
         }
-        function closePromoModal() { const m = document.getElementById('promo-modal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+        function closePromoModal() {
+            const m = document.getElementById('promo-modal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+            try { sessionStorage.setItem('wa_promo_seen', '1'); } catch (e) { /* ignore */ }
+        }
         function claimPromo() { closePromoModal(); showPage('shop'); }
         async function loadUsdRate() {
             try {
@@ -2369,9 +2379,9 @@
             };
             const snapshot = pending ? pending.snapshot : cart.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, image: i.image, symbol: i.symbol, color: i.color, size: i.size, kidAge: i.kidAge || '', kidHeight: i.kidHeight || '', kidSex: i.kidSex || '' }));
             const order = { id: orderId, date: new Date().toLocaleString(), method, total, fee, items: snapshot, customer, guest: pending ? pending.guest : !account };
-            const orders = JSON.parse(localStorage.getItem('wa_orders') || '[]');
+            const orders = JSON.parse(getStored('wa_orders') || '[]');
             orders.unshift(order);
-            localStorage.setItem('wa_orders', JSON.stringify(orders));
+            setStored('wa_orders', JSON.stringify(orders));
             localStorage.setItem('wa_last_order', orderId);
 
             const idEl = document.getElementById('success-order-id');
@@ -3138,7 +3148,38 @@
         function applySessionUser(user) {
             if (user) localStorage.setItem('wa_user', JSON.stringify(user));
             else localStorage.removeItem('wa_user');
+            if (user) mergeGuestDataIntoAccount();
             updateUserUI();
+        }
+        /* Orders and wishlist are private to the signed-in account. Guests keep
+           their own bucket, which is merged into the account the first time they log in. */
+        function currentAccountKey() {
+            try {
+                const u = JSON.parse(localStorage.getItem('wa_user') || 'null');
+                if (u && (u.id || u.email)) return String(u.id || u.email);
+            } catch (e) { /* ignore */ }
+            return '';
+        }
+        function scopedKey(name) {
+            const id = currentAccountKey();
+            return id ? name + '::' + id : name;
+        }
+        function getStored(name) { return localStorage.getItem(scopedKey(name)); }
+        function setStored(name, value) { localStorage.setItem(scopedKey(name), value); }
+        function mergeGuestDataIntoAccount() {
+            const id = currentAccountKey();
+            if (!id) return;
+            ['wa_orders', 'wa_wishlist'].forEach(name => {
+                const guest = JSON.parse(localStorage.getItem(name) || '[]');
+                if (!Array.isArray(guest) || !guest.length) return;
+                const key = name + '::' + id;
+                const own = JSON.parse(localStorage.getItem(key) || '[]');
+                const list = Array.isArray(own) ? own : [];
+                const seen = new Set(list.map(x => x && x.id));
+                guest.forEach(x => { if (x && !seen.has(x.id)) list.push(x); });
+                localStorage.setItem(key, JSON.stringify(list));
+                localStorage.setItem(name, '[]');
+            });
         }
         async function socialAuth(provider) {
             authMessage('', false);
@@ -3207,6 +3248,13 @@
                 if (!loginId) { authMessage('Enter your email or phone number.', true); return; }
                 const result = await waApi('login', { login: loginId, password });
                 if (!result.ok) {
+                    if (result.inactive && email.includes('@')) {
+                        pendingVerifyEmail = email;
+                        const resent = await waApi('resend_otp', { email });
+                        authMessage(resent.ok ? 'Your account is not activated yet. We sent a fresh code and activation link to your email.' : result.message, !resent.ok);
+                        if (resent.ok) { resetOtpPanel(); pendingVerifyEmail = email; setOtpPanel(true); refreshVerificationStatus(); }
+                        return;
+                    }
                     let msg = result.message;
                     if (result.locked) msg += ' (' + result.retry_after + 's left)';
                     authMessage(msg, true);
@@ -3297,10 +3345,17 @@
             const el = document.getElementById('forgot-msg');
             if (el) { el.textContent = text || ''; el.className = 'text-xs text-center ' + (ok ? 'text-green-700' : 'text-red-600'); }
         }
+        function resetForgotSteps() {
+            resetToken = null;
+            ['forgot-identifier', 'forgot-otp', 'forgot-password'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+            ['forgot-identifier', 'forgot-send-btn'].forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+            ['forgot-otp', 'forgot-verify-btn', 'forgot-password', 'forgot-reset-btn'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        }
         function toggleForgot() {
             const p = document.getElementById('forgot-panel');
             if (!p) return;
             const opening = p.classList.contains('hidden');
+            if (opening) resetForgotSteps();
             p.classList.toggle('hidden');
             const form = document.querySelector('#auth-panel form');
             if (form) form.classList.toggle('hidden', opening);
@@ -3320,6 +3375,8 @@
             const result = await waApi('forgot_request', { identifier });
             forgotMessage(result.message, result.ok);
             if (result.ok) {
+                document.getElementById('forgot-identifier').classList.add('hidden');
+                document.getElementById('forgot-send-btn').classList.add('hidden');
                 document.getElementById('forgot-otp').classList.remove('hidden');
                 document.getElementById('forgot-verify-btn').classList.remove('hidden');
             }
@@ -3331,6 +3388,8 @@
             forgotMessage(result.message, result.ok);
             if (result.ok) {
                 resetToken = result.reset_token;
+                document.getElementById('forgot-otp').classList.add('hidden');
+                document.getElementById('forgot-verify-btn').classList.add('hidden');
                 document.getElementById('forgot-password').classList.remove('hidden');
                 document.getElementById('forgot-reset-btn').classList.remove('hidden');
             }
@@ -3343,7 +3402,7 @@
                 resetToken = null;
                 authMode = 'login';
                 applyAuthMode();
-                setTimeout(() => { closeForgot(); }, 1500);
+                setTimeout(() => { closeForgot(); resetForgotSteps(); }, 1500);
             }
         }
         let userMenuTimer = null;
@@ -3372,14 +3431,14 @@
         function goUserPage(section) {
             closeUserMenu();
             if (section === 'dashboard') { renderDashboard(); showPage('dashboard'); return; }
-            if (section === 'orders') { renderOrders(); (JSON.parse(localStorage.getItem('wa_orders') || '[]')).forEach(o => syncOrderStatus(o.id, null)); showPage('orders'); return; }
+            if (section === 'orders') { renderOrders(); (JSON.parse(getStored('wa_orders') || '[]')).forEach(o => syncOrderStatus(o.id, null)); showPage('orders'); return; }
             const titles = { wishlist: 'Wishlist', profile: 'Profile' };
             openAccountSection(section, titles[section] || section);
         }
         function renderDashboard() {
             const user = JSON.parse(localStorage.getItem('wa_user') || 'null');
-            const wish = JSON.parse(localStorage.getItem('wa_wishlist') || '[]');
-            const orders = JSON.parse(localStorage.getItem('wa_orders') || '[]');
+            const wish = JSON.parse(getStored('wa_wishlist') || '[]');
+            const orders = JSON.parse(getStored('wa_orders') || '[]');
             const welcome = document.getElementById('dash-welcome');
             if (welcome) welcome.innerText = 'Welcome back' + (user ? ', ' + String(user.name).split(' ')[0] : '') + '. Here is your Adinkra account at a glance.';
             const stats = [
@@ -3395,9 +3454,9 @@
         function syncOrderStatus(orderId, box){
             fetch('api/orders.php?action=status&order_id='+encodeURIComponent(orderId)).then(r=>r.json()).then(j=>{
                 if(!j.ok||!j.status)return;
-                const orders=JSON.parse(localStorage.getItem('wa_orders')||'[]');
+                const orders=JSON.parse(getStored('wa_orders')||'[]');
                 const o=orders.find(x=>x.id===orderId);
-                if(o){o.status=j.status;if(j.status==='delivered')o.delivered=true;localStorage.setItem('wa_orders',JSON.stringify(orders));}
+                if(o){o.status=j.status;if(j.status==='delivered')o.delivered=true;setStored('wa_orders',JSON.stringify(orders));}
                 const label=document.getElementById('order-status-'+orderId);
                 if(label)label.textContent=STATUS_LABELS[j.status]||'Processing';
                 if(box && box.dataset.statusValue !== j.status){ box.dataset.statusValue=j.status; toggleOrderProgress(orderId,true); }
@@ -3415,7 +3474,7 @@
                 { icon: 'fa-truck-moving', title: 'In Transit', desc: 'On its way to your location.', done: false },
                 { icon: 'fa-house', title: 'Delivered', desc: 'Arriving at your doorstep.', done: false }
             ];
-            const order = (JSON.parse(localStorage.getItem('wa_orders') || '[]')).find(o => o.id === orderId);
+            const order = (JSON.parse(getStored('wa_orders') || '[]')).find(o => o.id === orderId);
             const stage = order && order.status ? order.status : (order && order.delivered ? 'delivered' : 'processing');
             const doneCount = stage === 'delivered' ? 6 : stage === 'in_transit' ? 5 : stage === 'shipped' ? 4 : 3;
             steps.forEach((s, i) => { if (i < doneCount) s.done = true; });
@@ -3432,9 +3491,9 @@
         }
 
         function markDelivered(orderId) {
-            const orders = JSON.parse(localStorage.getItem('wa_orders') || '[]');
+            const orders = JSON.parse(getStored('wa_orders') || '[]');
             const o = orders.find(x => x.id === orderId);
-            if (o) { o.delivered = true; localStorage.setItem('wa_orders', JSON.stringify(orders)); }
+            if (o) { o.delivered = true; setStored('wa_orders', JSON.stringify(orders)); }
             toggleOrderProgress(orderId, true);
         }
         function reviewFormHtml(orderId) {
@@ -3495,7 +3554,7 @@
         async function submitReview(orderId) {
             const rating = parseInt(document.getElementById('review-rating-' + orderId).value) || 5;
             const text = document.getElementById('review-text-' + orderId).value.trim();
-            const order = (JSON.parse(localStorage.getItem('wa_orders') || '[]')).find(o => o.id === orderId);
+            const order = (JSON.parse(getStored('wa_orders') || '[]')).find(o => o.id === orderId);
             if (!order || !text) { alert('Please write a short review.'); return; }
             const productId = (order.items && order.items[0]) ? order.items[0].id : 0;
             let user = null;
@@ -3521,8 +3580,24 @@
             if (typeof renderReviews === 'function' && document.getElementById('page-product').classList.contains('active')) renderReviews(products.find(p => p.id === productId));
         }
 
+        function openImageLightbox(src, caption) {
+            const img = document.getElementById('lightbox-img');
+            const box = document.getElementById('image-lightbox');
+            if (!img || !box) return;
+            img.src = src;
+            document.getElementById('lightbox-caption').textContent = caption || '';
+            box.classList.remove('hidden');
+            box.classList.add('flex');
+        }
+        function closeImageLightbox() {
+            const box = document.getElementById('image-lightbox');
+            if (!box) return;
+            box.classList.add('hidden');
+            box.classList.remove('flex');
+            document.getElementById('lightbox-img').src = '';
+        }
         function renderOrders() {
-            const orders = JSON.parse(localStorage.getItem('wa_orders') || '[]');
+            const orders = JSON.parse(getStored('wa_orders') || '[]');
             const el = document.getElementById('orders-list');
             if (!el) return;
             if (!orders.length) {
@@ -3530,22 +3605,35 @@
                 return;
             }
             el.innerHTML = orders.map(o => {
-                const items = (o.items || []).map(i => '<div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0"><img src="' + i.image + '" class="w-12 h-14 object-cover"><div class="flex-1 text-sm text-brand-dark">' + i.name + ' <span class="text-gray-400">× ' + i.quantity + '</span></div><span class="text-sm text-brand-dark">' + formatPrice(i.price * i.quantity) + '</span></div>').join('');
+                const items = (o.items || []).map(i => {
+                    const detail = [i.symbol ? 'Adinkra: ' + i.symbol : '', i.size ? 'Size: ' + i.size : '', i.color ? 'Color: ' + i.color : '', i.kidAge ? 'Age: ' + i.kidAge : '', i.kidHeight ? 'Height: ' + i.kidHeight : ''].filter(Boolean).join('  ·  ');
+                    const name = escapeHtml(i.name || '');
+                    const img = escapeHtml(i.image || '');
+                    const cap = escapeHtml((i.name || '') + (detail ? ' — ' + detail : ''));
+                    return '<div class="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">' +
+                        '<img src="' + img + '" alt="' + name + '" data-full="' + img + '" data-cap="' + cap + '" class="order-item-img w-14 h-16 object-cover cursor-pointer hover:opacity-80 shrink-0" title="Click to view full size">' +
+                        '<div class="flex-1 min-w-0"><p class="text-sm text-brand-dark">' + name + ' <span class="text-gray-400">× ' + (i.quantity || 1) + '</span></p>' +
+                        (detail ? '<p class="text-[11px] text-gray-500 mt-1 leading-relaxed">' + escapeHtml(detail) + '</p>' : '') + '</div>' +
+                        '<span class="text-sm text-brand-dark shrink-0">' + formatPrice((i.price || 0) * (i.quantity || 1)) + '</span></div>';
+                }).join('');
                 return '<div class="bg-white border border-gray-200 p-6"><div class="flex flex-wrap justify-between items-center gap-3 mb-4"><div><p class="font-medium text-brand-dark">' + o.id + '</p><p class="text-xs text-gray-500">' + o.date + ' · ' + (o.method || '').toUpperCase() + '</p></div>' + '<span id="order-status-' + o.id + '" class="px-3 py-1 bg-green-100 text-green-700 text-xs uppercase tracking-wider">' + (STATUS_LABELS[o.status] || 'Processing') + '</span></div>' + items + '<div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200"><span class="font-medium text-brand-dark">' + formatPrice(o.total) + '</span><button onclick="toggleOrderProgress(\'' + o.id + '\')" class="plain-btn text-brand-dark hover:text-brand-sea text-sm underline">Track order</button></div><div id="progress-' + o.id + '" class="hidden mt-6 pt-5 border-t border-gray-100"></div></div>';
             }).join('');
+            el.querySelectorAll('.order-item-img').forEach(img => {
+                img.addEventListener('click', () => openImageLightbox(img.dataset.full, img.dataset.cap));
+            });
         }
         function openAccountSection(section, title) {
             let user = null;
             try { user = JSON.parse(localStorage.getItem('wa_user')); } catch (e) { user = null; }
             let content = '';
             if (section === 'dashboard') {
-                const wishCount = (JSON.parse(localStorage.getItem('wa_wishlist') || '[]')).length;
+                const wishCount = (JSON.parse(getStored('wa_wishlist') || '[]')).length;
                 content = '<div class="grid grid-cols-2 gap-4">' +
                     '<div class="border p-4"><p class="text-2xl font-bold text-brand-dark">' + cart.length + '</p><p class="text-xs text-gray-500">Cart items</p></div>' +
                     '<div class="border p-4"><p class="text-2xl font-bold text-brand-dark">' + wishCount + '</p><p class="text-xs text-gray-500">Wishlist</p></div></div>' +
                     '<p class="text-sm text-gray-600 mt-6">Welcome back' + (user ? ', ' + escapeHtml(String(user.name).split(' ')[0]) : '') + '. Your Adinkra journey continues here.</p>';
             } else if (section === 'wishlist') {
-                const ids = JSON.parse(localStorage.getItem('wa_wishlist') || '[]');
+                const ids = JSON.parse(getStored('wa_wishlist') || '[]');
                 const items = products.filter(p => ids.includes(p.id));
                 content = items.length ? items.map(p => '<div class="flex items-center gap-3 border-b py-3"><img src="' + p.image + '" class="w-12 h-14 object-cover"><div class="flex-1 text-sm text-brand-dark">' + p.name + '</div><button onclick="openProduct(' + p.id + '); closeAccountPanel()" class="text-xs text-brand-sea underline">View</button></div>').join('') : '<p class="text-sm text-gray-500">Your wishlist is empty.</p>';
             } else if (section === 'orders') {
@@ -3888,9 +3976,9 @@
         });
         // --- WISHLIST ---
         function getWishlist() {
-            try { return JSON.parse(localStorage.getItem('wa_wishlist')) || []; } catch (e) { return []; }
+            try { return JSON.parse(getStored('wa_wishlist')) || []; } catch (e) { return []; }
         }
-        function saveWishlist(list) { localStorage.setItem('wa_wishlist', JSON.stringify(list)); }
+        function saveWishlist(list) { setStored('wa_wishlist', JSON.stringify(list)); }
         function isInWishlist(id) { return getWishlist().includes(id); }
         function toggleWishlist(id) {
             const list = getWishlist();
