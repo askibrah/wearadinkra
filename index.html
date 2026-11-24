@@ -1010,7 +1010,7 @@
 
             <!-- Explore column -->
             <div class="explore-panel relative min-w-full snap-center lg:min-w-0 h-[50vh] lg:h-[70vh] min-h-[400px] bg-white px-8">
-                <div id="explore-symbol" class="absolute top-0 left-0 right-0 h-[calc(100%-9rem)] w-full p-10 pointer-events-none select-none" aria-hidden="true"></div>
+                <div id="explore-symbol" class="absolute top-0 left-0 right-0 h-[calc(100%-9rem)] w-full p-5 sm:p-10 pointer-events-none select-none" aria-hidden="true"></div>
                 <div class="absolute bottom-0 left-0 right-0 z-10 bg-white/95 px-6 py-5 text-center shadow-[0_-8px_24px_rgba(255,255,255,0.9)]">
                     <p id="explore-symbol-name" class="text-[15px] uppercase tracking-[0.2em] text-[#0B132B] font-semibold mb-1 sm:mb-2 pointer-events-none select-none"></p>
                     <p id="explore-symbol-desc" class="text-xs text-gray-600 mb-2 sm:mb-3 leading-relaxed pointer-events-none select-none"></p>
@@ -2944,7 +2944,7 @@
             if (adinkraSymbols.length > 1 && i === lastExploreIndex) i = (i + 1) % adinkraSymbols.length;
             lastExploreIndex = i;
             const s = adinkraSymbols[i];
-            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full object-contain"></div>';
+            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><div class="w-1/2 h-1/2 flex items-center justify-center"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full w-auto h-auto object-contain"></div></div>';
             el.setAttribute('aria-label', s.name + ' Adinkra symbol');
             const nameEl = document.getElementById('explore-symbol-name');
             if (nameEl) nameEl.textContent = s.name;
