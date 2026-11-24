@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="160" height="160"><defs><pattern id="kente" width="12" height="12" patternUnits="userSpaceOnUse">
+<rect width="12" height="12" fill="#F5C542"/>
+<rect x="0" y="0" width="12" height="3" fill="#D62828"/>
+<rect x="0" y="9" width="12" height="3" fill="#1B8A5A"/>
+<rect x="0" y="0" width="3" height="12" fill="#0B132B" opacity="0.85"/>
+<rect x="9" y="0" width="3" height="12" fill="#0B132B" opacity="0.85"/>
+<rect x="4" y="4" width="4" height="4" fill="#0B132B"/>
+<circle cx="6" cy="6" r="1.6" fill="#FFFFFF"/>
+</pattern></defs><g fill="url(#kente)">
+<path d="M5.11102 4.807H21.999V11.435H5.11102V12.42H21.999V23H18.888V19.051H16.369V23H13.259V19.051H10.741V23H7.62903V19.051H5.11102V23H1.99902V16.23H18.888V15.243H1.99902V8.615H18.888V7.628H1.99902V1H21.999V3.82H5.11102V4.807Z" fill="url(#kente)"/>
+
+</g></svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <defs>
+    <pattern id="kenteFabric" width="120" height="120" patternUnits="userSpaceOnUse">
+      <rect width="120" height="120" fill="#F5C542"/>
+      <rect x="0" y="0" width="120" height="14" fill="#0B132B"/>
+      <rect x="0" y="106" width="120" height="14" fill="#0B132B"/>
+      <rect x="0" y="14" width="16" height="92" fill="#0B132B"/>
+      <rect x="104" y="14" width="16" height="92" fill="#0B132B"/>
+      <g stroke="#0B132B" stroke-width="2">
+        <path d="M16 60 L60 30 L104 60 L60 90 Z" fill="#D62828"/>
+        <path d="M16 60 L60 90 L60 106 L16 76 Z" fill="#1565C0"/>
+        <path d="M104 60 L60 90 L60 106 L104 76 Z" fill="#1565C0"/>
+        <path d="M16 60 L60 30 L60 14 L16 44 Z" fill="#1565C0"/>
+        <path d="M104 60 L60 30 L60 14 L104 44 Z" fill="#1565C0"/>
+      </g>
+      <path d="M28 60 h8 M44 60 h8 M68 60 h8 M84 60 h8" stroke="#0B132B" stroke-width="4"/>
+      <rect x="54" y="52" width="12" height="16" fill="#1B8A5A"/>
+      <path d="M60 30 l10 10 -10 10 -10 -10 Z" fill="#0B132B"/>
+    </pattern>
+  </defs>
+  <rect width="240" height="240" fill="url(#kenteFabric)"/>
+</svg>

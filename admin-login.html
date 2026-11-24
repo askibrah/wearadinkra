@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Sign In | Wear Adinkra</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: {
+            colors: { 'brand-dark': '#0B132B', 'brand-sea': '#1C5D99', 'brand-light': '#8CB9E8' },
+            fontFamily: { sans: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'], serif: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'] }
+        } } };
+    </script>
+    <style>
+        @font-face { font-family: 'Avant Garde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        @font-face { font-family: 'AvantGarde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        html, body, button, input, select, textarea { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif !important; }
+
+        body { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif; }
+        .brand-panel {
+            background: radial-gradient(circle at 20% 15%, #1C5D99 0%, #0B132B 60%, #071024 100%);
+        }
+        @keyframes adminFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.18; }
+            50% { transform: translateY(-22px) rotate(9deg); opacity: 0.32; }
+        }
+        .admin-float { animation: adminFloat 6s ease-in-out infinite; }
+        .admin-float:nth-child(2) { animation-delay: 1.2s; }
+        .admin-float:nth-child(3) { animation-delay: 2.4s; }
+        .admin-float:nth-child(4) { animation-delay: 3.6s; }
+        input:focus { border-color: #1C5D99; box-shadow: 0 0 0 3px rgba(28, 93, 153, 0.12); }
+        .strength-bar { transition: width 0.3s ease, background-color 0.3s ease; }
+        .loader-spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes loaderPulse { 0%,100%{ transform: scale(1); opacity: .9; } 50%{ transform: scale(1.04); opacity: 1; } }
+        .loader-logo { animation: loaderPulse 1.4s ease-in-out infinite; }
+    </style>
+</head>
+<body class="min-h-screen bg-white flex flex-col lg:flex-row">
+
+    <!-- Brand panel -->
+    <div class="brand-panel relative lg:w-1/2 min-h-[320px] lg:min-h-screen overflow-hidden px-8 py-10 lg:px-14 lg:py-12 flex flex-col text-white">
+        <div class="absolute inset-0 pointer-events-none" style="background-image:url('assets/svg/adinkra-bg-white.svg');background-size:150px 150px;opacity:0.25"></div>
+        <div class="absolute inset-0 pointer-events-none text-brand-light">
+            <i class="admin-float fa-solid fa-cart-shopping absolute top-24 right-16 text-6xl"></i>
+            <i class="admin-float fa-solid fa-truck absolute top-1/3 right-40 text-7xl"></i>
+            <i class="admin-float fa-solid fa-box absolute bottom-1/3 left-16 text-6xl"></i>
+            <i class="admin-float fa-solid fa-tag absolute bottom-24 right-20 text-5xl"></i>
+        </div>
+        <div class="relative z-10 flex items-center gap-3">
+            <img src="assets/wearadinkra-logo.png" class="w-12 h-12 object-contain" alt="Wear Adinkra">
+            <div>
+                <p class="text-xl font-bold leading-none">WEAR ADINKRA</p>
+                <p class="text-[10px] tracking-[0.25em] text-white/70 mt-1">ADMIN PANEL</p>
+            </div>
+        </div>
+
+        <div class="relative z-10 mt-auto mb-auto py-16 max-w-md">
+            <span class="inline-block border border-white/30 rounded-full px-4 py-1.5 text-xs tracking-wider mb-6"><i class="fa-solid fa-circle text-[8px] mr-2 text-brand-light"></i>HERITAGE COMMERCE</span>
+            <h1 class="text-5xl lg:text-6xl font-extrabold leading-tight mb-6">Run your<br>store.</h1>
+            <p class="text-white/80 text-sm leading-relaxed">Every product, order, customer and payout in one place. Curate your collection, manage stock and keep the heritage moving.</p>
+            <div class="grid grid-cols-3 gap-4 mt-10 text-center">
+                <div><p class="font-bold text-lg">Products</p><p class="text-[10px] text-white/60 tracking-wider mt-1">MANAGE STOCK</p></div>
+                <div><p class="font-bold text-lg">Orders</p><p class="text-[10px] text-white/60 tracking-wider mt-1">FULFIL FAST</p></div>
+                <div><p class="font-bold text-lg">Customers</p><p class="text-[10px] text-white/60 tracking-wider mt-1">STAY CONNECTED</p></div>
+            </div>
+        </div>
+
+        <div class="relative z-10 flex flex-wrap gap-5 text-xs text-white/70">
+            <span><i class="fa-solid fa-shield-halved mr-2"></i>Secure access</span>
+            <span><i class="fa-solid fa-user-check mr-2"></i>Verified admins</span>
+            <span><i class="fa-solid fa-location-dot mr-2"></i>Made in Ghana</span>
+        </div>
+    </div>
+
+    <!-- Login panel -->
+    <div class="flex-1 flex items-center justify-center px-6 sm:px-10 lg:px-16 py-12 relative">
+        <div class="w-full max-w-md">
+            <h2 class="text-4xl font-extrabold text-[#0B132B] mb-2">Welcome back</h2>
+            <p class="text-gray-500 text-sm mb-9">Sign in with your admin email to continue.</p>
+
+            <form onsubmit="adminLogin(event)" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-[#0B132B] mb-2">Email address</label>
+                    <div class="flex items-center gap-3 bg-[#eef2fb] border border-transparent px-4 py-3.5 focus-within:border-brand-sea">
+                        <i class="fa-regular fa-envelope text-gray-500"></i>
+                        <input type="email" id="admin-email" required placeholder="admin@wearadinkra.com" class="flex-1 bg-transparent outline-none text-sm text-[#0B132B]">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-[#0B132B] mb-2">Password</label>
+                    <div class="flex items-center gap-3 bg-[#eef2fb] border border-transparent px-4 py-3.5 focus-within:border-brand-sea">
+                        <i class="fa-solid fa-lock text-gray-500"></i>
+                        <input type="password" id="admin-password" required placeholder="••••••••" oninput="checkStrength(this.value)" class="flex-1 bg-transparent outline-none text-sm text-[#0B132B]">
+                        <button type="button" onclick="toggleAdminPassword()" class="text-gray-500 hover:text-[#0B132B]" aria-label="Show password"><i id="admin-eye" class="fa-regular fa-eye"></i></button>
+                    </div>
+                    <div class="mt-2 flex items-center gap-3">
+                        <div class="flex-1 h-1.5 bg-gray-200"><div id="strength-bar" class="strength-bar h-full w-0 bg-red-500"></div></div>
+                        <span id="strength-text" class="text-[10px] text-gray-500 w-12 text-right"></span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <label class="flex items-center gap-2 text-gray-600 cursor-pointer"><input type="checkbox" id="admin-remember" class="accent-brand-sea"> Keep me signed in</label>
+                    <button type="button" onclick="adminForgot()" class="text-brand-dark font-semibold hover:text-brand-sea">Forgot password?</button>
+                </div>
+                <p id="admin-msg" class="hidden text-sm text-red-600"></p>
+                <button type="submit" id="admin-submit" class="w-full bg-brand-dark text-white font-semibold py-4 tracking-wide hover:bg-brand-sea transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-to-bracket"></i> Sign In to Dashboard
+                </button>
+            </form>
+
+            <div class="mt-8 border border-brand-light p-5">
+                <p class="text-sm font-semibold text-[#0B132B] mb-3 flex items-center gap-2"><span class="w-8 h-8 bg-brand-sea text-white flex items-center justify-center"><i class="fa-solid fa-key text-xs"></i></span> Demo accounts</p>
+                <div class="space-y-3 text-xs">
+                    <div class="flex items-center justify-between"><span><i class="fa-solid fa-crown text-amber-500 mr-2"></i><b>Super Admin</b> · admin@wearadinkra.com</span><button onclick="fillAdmin('admin@wearadinkra.com')" class="text-brand-dark font-semibold hover:text-brand-sea">Use →</button></div>
+                    <div class="flex items-center justify-between"><span><i class="fa-solid fa-user-tie text-brand-sea mr-2"></i><b>Manager</b> · manager@wearadinkra.com</span><button onclick="fillAdmin('manager@wearadinkra.com')" class="text-brand-dark font-semibold hover:text-brand-sea">Use →</button></div>
+                </div>
+            </div>
+
+            <p class="text-xs text-gray-400 mt-8 flex justify-between"><span>© 2026 Wear Adinkra</span><span><i class="fa-solid fa-lock mr-1"></i>Private area</span></p>
+        </div>
+
+        <!-- Admin loader -->
+        <div id="admin-loader" class="hidden fixed inset-0 bg-white/95 z-50 items-center justify-center" style="background-image:url('assets/svg/adinkra-bg-white.svg');background-size:140px 140px;background-repeat:repeat;">
+            <div class="flex flex-col items-center bg-white/80 px-10 py-8 rounded-sm">
+                <img src="assets/wearadinkra-logo.png" alt="Wear Adinkra" class="w-20 h-20 object-contain loader-logo">
+                <p class="text-xs tracking-widest text-gray-500 mt-4 uppercase">Signing in…</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+const API = 'api/admin.php';
+function showLoader(){const l=document.getElementById('admin-loader');l.classList.remove('hidden');l.classList.add('flex');}
+function hideLoader(){const l=document.getElementById('admin-loader');l.classList.add('hidden');l.classList.remove('flex');}
+function msg(text){const m=document.getElementById('admin-msg');m.textContent=text;m.classList.remove('hidden');}
+function fillAdmin(email){document.getElementById('admin-email').value=email;document.getElementById('admin-password').value='Admin123!';checkStrength('Admin123!');}
+function toggleAdminPassword(){const p=document.getElementById('admin-password');const i=document.getElementById('admin-eye');if(p.type==='password'){p.type='text';i.className='fa-solid fa-eye-slash';}else{p.type='password';i.className='fa-regular fa-eye';}}
+function checkStrength(v){let score=0;if(v.length>=6)score++;if(v.length>=10)score++;if(/[A-Z]/.test(v))score++;if(/[0-9]/.test(v))score++;if(/[^A-Za-z0-9]/.test(v))score++;const bar=document.getElementById('strength-bar');const txt=document.getElementById('strength-text');const colors=['bg-red-500','bg-orange-500','bg-yellow-400','bg-lime-500','bg-green-500'];bar.className='strength-bar h-full '+colors[Math.min(score,4)];bar.style.width=(score*20)+'%';txt.textContent=['WEAK','FAIR','OK','GOOD','STRONG'][Math.min(score,4)];}
+
+async function api(action,data={}){
+    showLoader();
+    try{
+        const c=await fetch(API+'?action=csrf').then(r=>r.json());
+        const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,csrf_token:c.csrf_token,...data})});
+        return await r.json();
+    }catch(e){return {ok:false,message:'Network error. Please try again.'};}finally{hideLoader();}
+}
+async function adminLogin(e){
+    e.preventDefault();
+    document.getElementById('admin-msg').classList.add('hidden');
+    const email=document.getElementById('admin-email').value.trim();
+    const password=document.getElementById('admin-password').value;
+    const result=await api('login',{email,password,remember:document.getElementById('admin-remember').checked});
+    if(!result.ok){msg(result.message+(result.retry_after?' ('+Math.ceil(result.retry_after/60)+' min left)':''));return;}
+    location.href='admin.html';
+}
+async function adminForgot(){
+    const email=prompt('Enter your admin email address:');
+    if(!email)return;
+    const result=await api('forgot',{email});
+    msg(result.message);
+}
+(async function(){
+    const me=await api('me');
+    if(me.ok&&me.user){location.href='admin.html';}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Admin Password | Wear Adinkra</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'],serif:['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif']}}}};</script>
+    <style>
+        @font-face { font-family: 'Avant Garde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        @font-face { font-family: 'AvantGarde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        html, body, button, input, select, textarea { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif !important; }
+    </style>
+</head>
+<body class="bg-[#f6f7fb] min-h-screen flex items-center justify-center px-4">
+<div class="w-full max-w-md bg-white border border-gray-200 p-8">
+    <h1 class="text-2xl font-bold text-[#0B132B] mb-2">Reset admin password</h1>
+    <p id="status" class="text-sm text-gray-500 mb-6">Enter a new password for your admin account.</p>
+    <input type="password" id="new-password" placeholder="New password" class="w-full border border-gray-300 px-4 py-3 mb-4 focus:outline-none focus:border-rose-500">
+    <button onclick="doReset()" class="w-full bg-rose-500 text-white font-semibold py-3 hover:bg-rose-600">Set new password</button>
+    <p id="msg" class="text-xs mt-4 text-center"></p>
+</div>
+<script>
+const token=new URLSearchParams(location.search).get('token');
+async function doReset(){
+    const password=document.getElementById('new-password').value;
+    if(password.length<8){document.getElementById('msg').textContent='Password must be at least 8 characters.';return;}
+    const c=await fetch('api/admin.php?action=csrf').then(r=>r.json());
+    const r=await fetch('api/admin.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'reset',csrf_token:c.csrf_token,token,password})});
+    const j=await r.json();
+    document.getElementById('msg').textContent=j.message;
+    if(j.ok)setTimeout(()=>location.href='admin-login.html',1200);
+}
+</script>
+</body>
+</html>

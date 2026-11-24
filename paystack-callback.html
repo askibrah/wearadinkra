@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirming payment | Wear Adinkra</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { 'brand-bg': '#f7f8fb', 'brand-dark': '#0B132B' }, fontFamily: { sans: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'], serif: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'] } } } };
+    </script>
+    <style>
+        @font-face { font-family: 'Avant Garde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        @font-face { font-family: 'AvantGarde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        html, body, button, input, select, textarea { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif !important; }
+    </style>
+</head>
+<body class="bg-brand-bg min-h-screen flex items-center justify-center px-4">
+    <div class="bg-white border border-gray-200 p-10 max-w-md w-full text-center">
+        <img src="assets/wearadinkra-logo.png" class="mx-auto mb-5" alt="Wear Adinkra" width="80" height="80" style="width:80px;height:80px;object-fit:contain;">
+        <h1 class="font-serif text-2xl text-brand-dark mb-3">Confirming your payment…</h1>
+        <p id="cb-msg" class="text-sm text-gray-500">Please wait while we verify your Paystack transaction.</p>
+    </div>
+<script>
+(async function(){
+    const ref=new URLSearchParams(location.search).get('reference')||new URLSearchParams(location.search).get('trxref');
+    const msg=document.getElementById('cb-msg');
+    if(!ref){msg.textContent='Missing payment reference.';return;}
+    try{
+        const r=await fetch('api/paystack.php?action=verify&reference='+encodeURIComponent(ref)).then(x=>x.json());
+        if(r.ok){
+            msg.textContent='Payment confirmed! Taking you to your order…';
+            setTimeout(()=>location.href='index.html?paystack_success='+encodeURIComponent(ref),700);
+        }else{
+            msg.textContent='Payment was not completed (status: '+(r.status||'unknown')+'). You can return to the store and try again.';
+        }
+    }catch(e){msg.textContent='Could not verify payment. Please return to the store and check your order.';}
+})();
+</script>
+</body>
+</html>

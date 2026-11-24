@@ -1,0 +1,928 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Wear Adinkra Admin</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { 'brand-dark': '#0B132B', 'brand-sea': '#1C5D99', 'brand-light': '#8CB9E8' }, fontFamily: { sans: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'], serif: ['Avant Garde','AvantGarde','ITC Avant Garde Gothic','Century Gothic','sans-serif'] } } } };
+    </script>
+    <style>
+        @font-face { font-family: 'Avant Garde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        @font-face { font-family: 'AvantGarde'; src: local('ITC Avant Garde Gothic'), local('AvantGarde'), local('Avant Garde'), local('Century Gothic'); font-display: swap; }
+        html, body, button, input, select, textarea { font-family: 'Avant Garde', 'AvantGarde', 'ITC Avant Garde Gothic', 'Century Gothic', sans-serif !important; }
+        body { background-image: url('assets/adinkra-bg-gray.svg'); background-size: 120px 120px; background-repeat: repeat; }
+        .card { background:#fff; border:1px solid #e5e7eb; }
+        body::before { content:''; position:fixed; inset:0; background-image:url('assets/svg/adinkra-bg.svg'); background-size:90px 90px; opacity:0.045; filter:grayscale(1); pointer-events:none; z-index:1; }
+        body > * { position:relative; z-index:2; }
+        .nav-item.active { background:rgba(140,185,232,0.18); color:#8CB9E8; border-left:3px solid #8CB9E8; }
+        @keyframes loaderPulse { 0%,100%{transform:scale(.92);opacity:.75} 50%{transform:scale(1.08);opacity:1} }
+        .loader-logo { animation: loaderPulse 1.4s ease-in-out infinite; }
+        @keyframes topProductsFlash { 0%{opacity:.15; transform:translateY(6px)} 100%{opacity:1; transform:translateY(0)} }
+        .top-products-flash { animation: topProductsFlash .45s ease; }
+
+        .admin-dark { background:#0B132B !important; color:#e5e7eb !important; }
+        .admin-dark header, .admin-dark .card { background:#111c33 !important; border-color:#243457 !important; color:#e5e7eb !important; }
+        .admin-dark h1, .admin-dark h2, .admin-dark .text-\[\#0B132B\] { color:#ffffff !important; }
+        .admin-dark .text-gray-500 { color:#9ca3af !important; }
+        aside.collapsed { width:4.5rem !important; }
+        aside.collapsed .side-label { display:none !important; }
+        aside.collapsed .nav-item { justify-content:center; padding-left:0; padding-right:0; }
+        #admin-sidebar > div:first-child { position: relative; }
+        #admin-sidebar > div:first-child > button { position:absolute; right:-14px; top:50%; transform:translateY(-50%); z-index:70; box-shadow:0 4px 14px rgba(11,19,43,0.35); }
+        /* Notifications sit at the bottom-right corner of the viewport */
+        #notif-panel { position:fixed !important; right:0; top:89px; bottom:0; width:22rem; max-width:92vw; border-radius:0; border-right:0; display:flex; flex-direction:column; }
+        #notif-panel.hidden { display:none !important; }
+        #notif-panel > div:first-child { flex-shrink:0; padding-top:10px; padding-bottom:10px; }
+        #notif-list { max-height:none !important; flex:1; height:auto; }
+    </style>
+</head>
+<body class="bg-[#f6f7fb] min-h-screen">
+
+<div class="flex min-h-screen">
+    <!-- Sidebar -->
+    <aside id="admin-sidebar" class="w-64 bg-[#0B132B] text-white flex-shrink-0 hidden md:flex flex-col transition-all duration-300">
+        <div class="px-6 py-7 flex items-center gap-3 border-b border-white/10">
+            <img src="assets/wearadinkra-logo.png" class="w-10 h-10 object-contain" alt="">
+            <div class="side-label"><p class="font-bold text-sm leading-none">WEAR ADINKRA</p><p class="text-[9px] tracking-[0.2em] text-white/50 mt-1">ADMIN PANEL</p></div>
+            <button onclick="toggleSidebar()" class="ml-auto w-8 h-8 rounded-full bg-[#0B132B] border border-white/20 flex items-center justify-center text-white hover:bg-brand-sea transition-colors" title="Collapse menu"><i id="sidebar-arrow" class="fa-solid fa-arrow-left"></i></button>
+        </div>
+        <nav class="flex-1 py-4 text-sm">
+            <button onclick="adminTab('overview',this)" class="nav-item active w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-gauge-high w-5"></i> <span class="side-label">Overview</span></button>
+            <button onclick="adminTab('products',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-shirt w-5"></i> <span class="side-label">Products</span></button>
+            <button onclick="adminTab('orders',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-box w-5"></i> <span class="side-label">Orders</span></button>
+            <button onclick="adminTab('customers',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-users w-5"></i> <span class="side-label">Customers</span></button>
+            <button onclick="adminTab('reviews',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-star w-5"></i> <span class="side-label">Reviews</span></button>
+            <button onclick="adminTab('promotions',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-percent w-5"></i> <span class="side-label">Promotions</span></button>
+            <button onclick="adminTab('settings',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-gear w-5"></i> <span class="side-label">Settings</span></button>
+            <button onclick="adminTab('visits',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-chart-line w-5"></i> <span class="side-label">Website visits</span></button>
+        </nav>
+        <div class="p-4 border-t border-white/10 mt-auto sticky bottom-0 bg-[#0B132B]">
+            <button onclick="adminLogout()" class="text-xs text-brand-light hover:text-white"><i class="fa-solid fa-power-off mr-2"></i><span class="side-label">Sign out</span></button>
+        </div>
+    </aside>
+
+    <!-- Mobile slide-out navigation (matches the desktop sidebar) -->
+    <div id="mobile-side-overlay" class="fixed inset-0 bg-black/50 z-[80] hidden md:hidden" onclick="closeMobileSidebar()"></div>
+    <aside id="mobile-side-drawer" class="fixed left-0 top-0 h-full w-64 max-w-[85vw] bg-[#0B132B] text-white z-[90] flex flex-col transform -translate-x-full transition-transform duration-300 md:hidden">
+        <div class="px-6 py-7 flex items-center gap-3 border-b border-white/10">
+            <img src="assets/wearadinkra-logo.png" class="w-10 h-10 object-contain" alt="">
+            <div><p class="font-bold text-sm leading-none">WEAR ADINKRA</p><p class="text-[9px] tracking-[0.2em] text-white/50 mt-1">ADMIN PANEL</p></div>
+            <button onclick="closeMobileSidebar()" class="ml-auto text-white/70 hover:text-white text-xl" aria-label="Close menu"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <nav class="flex-1 py-4 text-sm">
+            <button onclick="adminTab('overview',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-gauge-high w-5"></i> <span>Overview</span></button>
+            <button onclick="adminTab('products',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-shirt w-5"></i> <span>Products</span></button>
+            <button onclick="adminTab('orders',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-box w-5"></i> <span>Orders</span></button>
+            <button onclick="adminTab('customers',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-users w-5"></i> <span>Customers</span></button>
+            <button onclick="adminTab('reviews',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-star w-5"></i> <span>Reviews</span></button>
+            <button onclick="adminTab('promotions',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-percent w-5"></i> <span>Promotions</span></button>
+            <button onclick="adminTab('settings',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-gear w-5"></i> <span>Settings</span></button>
+            <button onclick="adminTab('visits',this)" class="nav-item w-full text-left px-6 py-3 flex items-center gap-3 border-l-3 border-transparent text-white/70 hover:bg-white/5"><i class="fa-solid fa-chart-line w-5"></i> <span>Website visits</span></button>
+        </nav>
+        <div class="p-4 border-t border-white/10">
+            <button onclick="adminLogout()" class="text-xs text-brand-light hover:text-white"><i class="fa-solid fa-power-off mr-2"></i>Sign out</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 min-w-0">
+        <header class="bg-white border-b border-gray-200 px-6 py-5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="md:hidden">
+                    <button onclick="openMobileSidebar()" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
+                </div>
+                <div><h1 class="text-xl font-bold text-[#0B132B]" id="page-title">Overview</h1><p class="text-xs text-gray-500 mt-1">Welcome back, here is your store at a glance.</p></div>
+            </div>
+            <div class="flex items-center gap-3"><span class="text-xs text-gray-500 hidden sm:block" id="admin-email-top"></span>
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 relative" title="Notifications"><i class="fa-regular fa-bell"></i><span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span></button>
+                    <div id="notif-panel" class="hidden absolute right-0 top-full w-80 bg-white border border-gray-200 shadow-2xl z-[60]">
+                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center"><p class="text-sm font-bold text-[#0B132B]">Notifications</p><button onclick="markNotificationsSeen()" class="text-xs text-brand-sea">Mark all read</button></div>
+                        <div id="notif-list" class="max-h-80 overflow-y-auto"></div>
+                    </div>
+                </div>
+                <button onclick="toggleAdminMode()" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50" title="Toggle light / dark mode"><i id="admin-mode-icon" class="fa-regular fa-moon"></i></button><span class="w-9 h-9 rounded-full bg-brand-sea text-white flex items-center justify-center text-xs font-bold" id="admin-avatar">A</span></div>
+        </header>
+
+        <div class="p-6">
+            <div id="tab-overview" class="tab-panel">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8" id="admin-stats"></div>
+                <div class="grid lg:grid-cols-2 gap-6 mb-8">
+                    <div class="card p-6">
+                    <div class="flex flex-wrap gap-3 justify-between items-center mb-5">
+                        <h2 class="font-bold text-[#0B132B]">Sales overview</h2>
+                        <select id="chart-range" onchange="render()" class="border border-gray-300 px-3 py-2 text-xs">
+                            <option value="all" selected>All time</option>
+                            <option value="7">Last 7 days</option>
+                            <option value="30">Last 30 days</option>
+                            <option value="90">Last 90 days</option>
+                        </select>
+                        <div class="flex items-center gap-1 ml-auto"><input type="date" id="chart-from" onchange="render()" class="border border-gray-300 px-2 py-2 text-xs"><span class="text-xs text-gray-400">to</span><input type="date" id="chart-to" onchange="render()" class="border border-gray-300 px-2 py-2 text-xs"></div>
+                    </div>
+                    <div id="admin-chart"></div>
+                    </div>
+                    <div class="card p-6"><h2 class="font-bold text-[#0B132B] mb-5">Top 10 products buyers are purchasing</h2><div id="admin-top-products"></div></div>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="card p-6"><h2 class="font-bold text-[#0B132B] mb-5">Recent orders</h2><div id="admin-recent-orders"></div></div>
+                </div>
+            </div>
+            <div id="tab-promotions" class="tab-panel hidden">
+                <div class="card p-6 mb-6">
+                    <h2 class="font-bold text-[#0B132B] mb-4">Create promotion</h2>
+                    <form onsubmit="savePromo(event)" class="grid sm:grid-cols-2 gap-4">
+                        <select id="promo-product" class="border border-gray-300 px-4 py-3 text-sm"><option value="all">All products</option></select>
+                        <select id="promo-type" class="border border-gray-300 px-4 py-3 text-sm"><option>Christmas</option><option>Valentine</option><option>Easter</option><option>Black Friday</option><option>New Year</option><option>Flash Sale</option><option>Clearance</option></select>
+                        <input id="promo-discount" type="number" min="1" max="90" placeholder="Discount %" class="border border-gray-300 px-4 py-3 text-sm" required>
+                        <input id="promo-start" type="datetime-local" class="border border-gray-300 px-4 py-3 text-sm" title="Promotion start date">
+                        <input id="promo-end" type="datetime-local" required class="border border-gray-300 px-4 py-3 text-sm" title="Promotion end date">
+                        <button type="submit" class="bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea sm:col-span-2">Start promotion</button>
+                    </form>
+                </div>
+                <div class="card p-6"><h2 class="font-bold text-[#0B132B] mb-4">Active promotions</h2><div id="promo-list"></div></div>
+            </div>
+            <div id="tab-products" class="tab-panel hidden"></div>
+            <div id="tab-orders" class="tab-panel hidden"></div>
+            <div id="tab-customers" class="tab-panel hidden"></div>
+            <div id="tab-reviews" class="tab-panel hidden"></div>
+            <div id="tab-settings" class="tab-panel hidden">
+                <div class="flex gap-2 mb-6 border-b border-gray-200 pb-3">
+                    <button onclick="settingsPane('seo',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider bg-brand-dark text-white">SEO Settings</button>
+                    <button onclick="settingsPane('signin',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Sign-in</button>
+                    <button onclick="settingsPane('notif',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Notifications</button>
+                    <button onclick="settingsPane('account',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Account</button>
+                </div>
+                <form onsubmit="saveSettings(event)" class="space-y-6">
+                    <div id="set-pane-seo" class="settings-pane space-y-6">
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Is the site being indexed?</h2>
+                            <p class="text-xs text-gray-500 mb-5">The master switches. Everything below is written into the page head and the robots file.</p>
+                            <div class="space-y-3 text-sm">
+                                <label class="flex items-center gap-3"><input type="checkbox" id="set-write-tags" class="accent-brand-sea" onchange="updateSeoStatus()" checked> <span><b>Write SEO tags</b><br><span class="text-xs text-gray-500">Turn off and the page carries none of these tags.</span></span></label>
+                                <label class="flex items-center gap-3"><input type="checkbox" id="set-allow-index" class="accent-brand-sea" onchange="updateSeoStatus()" checked> <span><b>Allow search engines to index the site</b><br><span class="text-xs text-gray-500">Turning this off rewrites robots.txt to disallow everything.</span></span></label>
+                                <label class="flex items-center gap-3"><input type="checkbox" id="set-allow-follow" class="accent-brand-sea" onchange="updateSeoStatus()" checked> <span><b>Allow search engines to follow links</b><br><span class="text-xs text-gray-500">Off stops Google exploring the site at all.</span></span></label>
+                            </div>
+                            <p class="text-xs text-green-700 mt-4 bg-green-50 p-3" id="seo-status">Tags on, indexing allowed — open to search engines.</p>
+                        </div>
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Search basics</h2>
+                            <p class="text-xs text-gray-500 mb-5">The title and description Google reads.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Site title</label><input id="set-seo-title" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400 mt-1">Under ~60 characters.</p></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Title template</label><input id="set-title-template" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400 mt-1">%s is replaced with the page name.</p></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Meta description</label><textarea id="set-seo-desc" rows="2" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></textarea><p class="text-[10px] text-gray-400 mt-1">About 155 characters is the useful ceiling.</p></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Keywords</label><input id="set-seo-keys" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400 mt-1">Comma separated.</p></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Canonical base URL</label><input id="set-base-url" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400 mt-1">No trailing slash. Used for sitemap, robots and canonical links.</p></div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Link previews</h2>
+                            <p class="text-xs text-gray-500 mb-5">How shared links look in WhatsApp, Facebook and X.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Preview title</label><input id="set-og-title" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Preview type</label><select id="set-og-type" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><option>website</option><option>article</option></select></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Preview description</label><textarea id="set-og-desc" rows="2" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></textarea></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Preview image URL</label><input id="set-og-image" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400 mt-1">Absolute URL, around 1200x630.</p></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">X / Twitter handle</label><input id="set-tw-handle" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">X / Twitter title</label><input id="set-tw-title" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">X / Twitter description</label><input id="set-tw-desc" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">X / Twitter image URL</label><input id="set-tw-image" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Theme colour</label><input id="set-theme-color" type="color" class="w-full border border-gray-300 px-2 py-2 mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Favicon URL</label><input id="set-favicon" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-4">Sitemap</h2>
+                            <label class="flex items-center gap-3 text-sm mb-4"><input type="checkbox" id="set-list-listings" class="accent-brand-sea" checked> List individual products (each approved listing with a photo gets its own URL)</label>
+                            <p class="text-xs text-gray-600">Generated files: <a class="text-brand-sea underline" href="robots.txt" target="_blank">robots.txt</a> · <a class="text-brand-sea underline" href="sitemap.xml" target="_blank">sitemap.xml</a></p>
+                            <p class="text-[11px] text-gray-400 mt-2">Both are regenerated from these settings. Submit the sitemap in Google Search Console.</p>
+                        </div>
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Verification &amp; measurement</h2>
+                            <p class="text-xs text-gray-500 mb-5">Verification tokens are written as meta tags; analytics IDs are injected server-side output.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Google Search Console token</label><input id="set-gsc" type="password" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Bing Webmaster token</label><input id="set-bing" type="password" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Google Analytics ID</label><input id="set-ga" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400">G-XXXXXXXXXX</p></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Google Tag Manager ID</label><input id="set-gtm" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400">GTM-XXXXXXX</p></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Google AdSense publisher ID</label><input id="set-adsense" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"><p class="text-[10px] text-gray-400">ca-pub-0000000000000000</p></div>
+                            </div>
+                        </div>
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Structured data</h2>
+                            <p class="text-xs text-gray-500 mb-5">Machine-readable facts about the business.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Organisation name</label><input id="set-org-name" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Logo URL</label><input id="set-org-logo" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div class="sm:col-span-2"><label class="text-xs font-semibold text-brand-dark">Organisation description</label><textarea id="set-org-desc" rows="2" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></textarea></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Facebook page URL</label><input id="set-fb-page" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">X / Twitter profile URL</label><input id="set-tw-profile" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Instagram URL</label><input id="set-ig-url" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">LinkedIn URL</label><input id="set-li-url" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">YouTube URL</label><input id="set-yt-url" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                            </div>
+                            <p class="text-[11px] text-gray-400 mt-4 leading-relaxed">Links from other sites, real pages with real descriptions, mobile speed, Search Console, and consistent address/phone details are what actually move rankings. This screen is housekeeping — it stops good listings being invisible.</p>
+                        </div>
+                    </div>
+                    <div id="set-pane-signin" class="settings-pane hidden grid lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h2 class="font-bold text-[#0B132B] mb-1">Google login</h2>
+                        <p class="text-xs text-gray-500 mb-5">OAuth app credentials for customer sign-in.</p>
+                        <div class="space-y-4">
+                            <div><label class="text-xs font-semibold text-brand-dark">Client ID</label><input id="set-google-id" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                            <div><label class="text-xs font-semibold text-brand-dark">Client secret</label><input id="set-google-secret" type="password" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                        </div>
+                    </div>
+                    <div class="card p-6">
+                        <h2 class="font-bold text-[#0B132B] mb-1">Facebook login</h2>
+                        <p class="text-xs text-gray-500 mb-5">Facebook app credentials for customer sign-in.</p>
+                        <div class="space-y-4">
+                            <div><label class="text-xs font-semibold text-brand-dark">App ID</label><input id="set-fb-id" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                            <div><label class="text-xs font-semibold text-brand-dark">App secret</label><input id="set-fb-secret" type="password" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                        </div>
+                    </div>
+                    </div>
+                    <div id="set-pane-notif" class="settings-pane hidden grid lg:grid-cols-1 gap-6">
+                    <div class="card p-6">
+                        <h2 class="font-bold text-[#0B132B] mb-1">Notification settings</h2>
+                        <p class="text-xs text-gray-500 mb-5">Choose which store events notify the admin.</p>
+                        <div class="space-y-3">
+                            <label class="flex items-center gap-3 text-sm"><input type="checkbox" id="set-notif-orders" class="accent-brand-sea" checked> New orders</label>
+                            <label class="flex items-center gap-3 text-sm"><input type="checkbox" id="set-notif-reviews" class="accent-brand-sea" checked> New reviews</label>
+                            <label class="flex items-center gap-3 text-sm"><input type="checkbox" id="set-notif-users" class="accent-brand-sea"> New customer registrations</label>
+                        </div>
+                        <button type="submit" class="mt-6 w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Save settings</button>
+                        <p id="settings-msg" class="hidden text-xs text-green-700 mt-3"></p>
+                    </div>
+                    </div>
+                    <div id="set-pane-account" class="settings-pane hidden grid lg:grid-cols-1 gap-6">
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Admin account</h2>
+                            <p class="text-xs text-gray-500 mb-5">Update your email, phone number or password.</p>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Name</label><input id="admin-profile-name" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Email</label><input id="admin-profile-email" type="email" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Phone number</label><input id="admin-profile-phone" type="tel" placeholder="+233..." class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">New password (optional)</label><input id="admin-profile-password" type="password" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1"></div>
+                            </div>
+                            <button type="button" onclick="saveAdminProfile()" class="mt-5 w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Update account</button>
+                            <p id="admin-profile-msg" class="hidden text-xs text-green-700 mt-3"></p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="tab-visits" class="tab-panel hidden">
+                <div class="card p-6 mb-6">
+                    <div class="flex flex-wrap gap-3 justify-between items-center mb-5"><h2 class="font-bold text-[#0B132B]">Visitors over time</h2><span class="text-xs text-gray-500" id="visits-total"></span></div>
+                    <div id="visits-chart"></div>
+                    <div id="visits-analysis" class="grid sm:grid-cols-3 gap-6 mt-8 pt-6 border-t border-gray-100"></div>
+                </div>
+                <div class="card overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100"><h2 class="font-bold text-[#0B132B]">Visitor details</h2><p class="text-xs text-gray-500 mt-1">Location, country and traffic source for each visit.</p></div>
+                    <table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Date</th><th class="p-4 text-left">Location</th><th class="p-4 text-left">Country</th><th class="p-4 text-left">Source</th><th class="p-4 text-left">Page</th><th class="p-4 text-left">Device</th></tr></thead><tbody id="visits-list"></tbody></table>
+                    <div class="p-4" id="visits-pager"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Add product modal -->
+<div id="add-product-modal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm sm:max-w-md max-h-[82vh] flex flex-col overflow-hidden">
+        <div class="px-5 sm:px-6 py-5 bg-gradient-to-r from-brand-dark to-brand-sea text-white flex justify-between items-center shrink-0 sticky top-0 z-10"><h2 id="add-product-modal-title" class="font-bold text-lg">Add product</h2><button onclick="closeAddProduct()" class="text-white/80 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="overflow-y-auto p-5 sm:p-6 flex-1">
+        <form onsubmit="saveProduct(event)" class="space-y-4">
+            <input id="np-name" required placeholder="Product name" class="w-full border border-gray-300 px-4 py-3 text-sm">
+            <textarea id="np-description" rows="3" placeholder="Product description" class="w-full border border-gray-300 px-4 py-3 text-sm"></textarea>
+            <div class="grid grid-cols-2 gap-3">
+                <input id="np-price" required type="number" step="0.01" placeholder="Price (GH₵)" class="border border-gray-300 px-4 py-3 text-sm">
+                <input id="np-stock" required type="number" placeholder="Stock" class="border border-gray-300 px-4 py-3 text-sm">
+                <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" id="np-unlimited" class="accent-brand-sea"> Always available</label>
+            </div>
+            <select id="np-category" class="w-full border border-gray-300 px-4 py-3 text-sm">
+                <option value="All">All Product</option><option>African Shirt</option><option>Kowa African Wear</option><option>Kimono Outfits</option><option>T-shirts</option><option>Kowa Outfit</option>
+            </select>
+            <input id="np-category-new" placeholder="Or type a new category" class="w-full border border-gray-300 px-4 py-3 text-sm">
+            <div id="np-dropzone" class="border-2 border-dashed border-brand-light p-6 text-center cursor-pointer hover:bg-brand-light/10">
+                <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-sea"></i>
+                <p class="text-sm text-brand-dark mt-2">Drag &amp; drop product images here</p>
+                <p class="text-xs text-gray-500 mt-1">or click to browse · up to 10 images</p>
+                <input id="np-files" type="file" accept="image/*" multiple class="hidden">
+            </div>
+            <div id="np-progress-wrap" class="hidden w-full">
+                <div class="h-1.5 w-full bg-gray-200"><div id="np-progress-bar" class="h-full bg-brand-sea transition-all duration-300" style="width:0%"></div></div>
+                <p id="np-progress-text" class="text-[10px] text-gray-500 mt-1"></p>
+            </div>
+            <div id="np-previews" class="flex flex-wrap gap-2"></div>
+            <p id="np-count" class="text-xs text-gray-500">0 / 10 images selected</p>
+            <input id="np-video" placeholder="Video link (YouTube / TikTok, optional)" class="w-full border border-gray-300 px-4 py-3 text-sm">
+            <button type="submit" class="w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Publish product</button>
+        </form>
+        <p id="add-product-msg" class="hidden text-xs text-green-700 mt-3"></p>
+        </div>
+    </div>
+</div>
+
+<!-- Customer orders modal -->
+<div id="customer-orders-modal" class="hidden fixed inset-0 bg-black/60 z-[82] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+        <div class="sticky top-0 z-20 flex justify-between items-center px-7 py-5 bg-brand-dark"><h2 id="customer-orders-title" class="font-bold text-white">Order history</h2><button onclick="closeCustomerOrders()" class="text-white/80 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="p-7">
+            <div id="customer-orders-body"></div>
+            <div id="customer-orders-pager" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin loader -->
+<div id="admin-loader" class="hidden fixed inset-0 bg-white z-[95] items-center justify-center transition-opacity duration-500">
+    <div class="flex flex-col items-center"><img src="assets/wearadinkra-logo.png" class="w-28 h-28 object-contain loader-logo" alt=""><p class="text-brand-sea tracking-[0.3em] uppercase text-xs mt-6">Wear Adinkra</p><div class="w-44 h-0.5 bg-brand-light/40 mt-4 overflow-hidden"><div class="h-full bg-brand-sea transition-all duration-700" style="width:100%"></div></div><p class="text-brand-dark/50 text-[10px] tracking-[0.2em] uppercase mt-3">Loading heritage…</p></div>
+</div>
+
+<!-- Image/video modal -->
+<div id="admin-image-modal" class="hidden fixed inset-0 bg-black/70 z-[80] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div class="sticky top-0 z-20 flex justify-between items-center px-6 py-4 bg-brand-dark"><h2 id="admin-image-title" class="font-bold text-white"></h2><button onclick="closeAdminImageModal()" class="text-white/80 hover:text-white text-2xl"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="p-6">
+        <div id="admin-image-main" class="bg-gray-100 aspect-square max-h-[55vh] flex items-center justify-center overflow-hidden"></div>
+        <div id="admin-image-thumbs" class="flex gap-2 overflow-x-auto mt-3"></div>
+        <p id="admin-image-price" class="text-brand-sea font-semibold mt-3"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+const API='api/admin.php';
+async function api(action,data={}){
+    try{const c=await fetch(API+'?action=csrf').then(r=>r.json());
+    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,csrf_token:c.csrf_token,...data})});
+    return r.json();}catch(e){return {ok:false,message:'Network error.'};}
+}
+function money(n){return 'GH₵ '+Number(n).toFixed(2);}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let adminUsdRate=0.085;
+async function loadAdminRate(){try{const r=await fetch('api/rate.php').then(x=>x.json());if(r.ok&&r.rate)adminUsdRate=r.rate;}catch(e){}render();}
+let products=[];
+let prodPage=1, custPage=1;
+let topProductsList=[], topProductsPage=0, topProductsTimer=null;
+function paginate(list,page,per=10){const start=(page-1)*per;return {rows:list.slice(start,start+per),pages:Math.max(1,Math.ceil(list.length/per))};}
+function pager(id,page,pages,onclick){let h='<div class="flex justify-end items-center gap-2 mt-4">';h+=`<button onclick="${onclick}(${Math.max(1,page-1)})" class="px-3 py-1.5 border border-gray-300 text-xs hover:bg-brand-dark hover:text-white">Prev</button>`;for(let i=1;i<=pages;i++)h+=`<button onclick="${onclick}(${i})" class="px-3 py-1.5 text-xs border ${i===page?'bg-brand-dark text-white':'border-gray-300 hover:bg-gray-50'}">${i}</button>`;h+=`<button onclick="${onclick}(${Math.min(pages,page+1)})" class="px-3 py-1.5 border border-gray-300 text-xs hover:bg-brand-dark hover:text-white">Next</button></div>`;document.getElementById(id).innerHTML=h;}
+async function boot(){
+    document.getElementById('admin-loader').classList.remove('hidden');
+    document.getElementById('admin-loader').classList.add('flex');
+    const me=await api('me');
+    if(!me.user){location.href='admin-login.html';return;}
+    try{const r=await fetch('api/products.php?action=list').then(x=>x.json());products=(r.ok&&r.products)?r.products:await fetch('products.json').then(x=>x.json());}catch(e){products=[];}
+    try{
+        const r=await fetch('api/orders.php?action=list').then(x=>x.json());
+        if(r.ok&&r.orders&&r.orders.length){
+            const map={};
+            (JSON.parse(localStorage.getItem('wa_orders')||'[]')).forEach(o=>map[o.id]=o);
+            r.orders.forEach(o=>{
+                if(!map[o.order_id])map[o.order_id]={id:o.order_id,date:o.created_at,method:o.method,total:Number(o.total),status:o.status,guest:Number(o.guest)===1,customer:{name:o.customer,email:o.email,phone:o.phone},items:(()=>{try{return JSON.parse(o.items||'[]');}catch(e){return [];}})()};
+                else map[o.order_id].status=o.status;
+            });
+            localStorage.setItem('wa_orders',JSON.stringify(Object.values(map)));
+        }
+    }catch(e){}
+    try{
+        const r=await fetch('api/auth.php?action=reviews_list').then(x=>x.json());
+        if(r.ok&&r.reviews&&r.reviews.length){
+            const local=JSON.parse(localStorage.getItem('wa_reviews')||'[]');
+            r.reviews.forEach(x=>{
+                if(!local.some(l=>l.author===x.author&&l.comment===x.comment))local.push({author:x.author,rating:x.rating,comment:x.comment,date:x.created_at,images:(()=>{try{return JSON.parse(x.images||'[]');}catch(e){return [];}})()});
+            });
+            localStorage.setItem('wa_reviews',JSON.stringify(local));
+        }
+    }catch(e){}
+    document.getElementById('admin-email-top').textContent=me.user.email;
+    document.getElementById('admin-avatar').textContent=me.user.name.charAt(0).toUpperCase();
+    document.getElementById('admin-profile-name').value=me.user.name;
+    document.getElementById('admin-profile-email').value=me.user.email;
+    document.getElementById('admin-profile-phone').value=me.user.phone||'';
+    loadSettings();
+    checkNotifications();
+    setInterval(checkNotifications,15000);
+    render();
+    loadAdminRate();
+    const l=document.getElementById('admin-loader');l.classList.add('hidden');l.classList.remove('flex');
+}
+function renderPromos(){
+    const sel=document.getElementById('promo-product');
+    if(sel)sel.innerHTML='<option value="all">All products</option>'+products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+    const promos=JSON.parse(localStorage.getItem('wa_promotions')||'[]');
+    const list=document.getElementById('promo-list');
+    if(!list)return;
+    list.innerHTML=promos.length?`<table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-3 text-left">Product</th><th class="p-3 text-left">Type</th><th class="p-3 text-left">Discount</th><th class="p-3 text-left">Starts</th><th class="p-3 text-left">Ends</th><th class="p-3"></th></tr></thead><tbody>${promos.map((p,i)=>`<tr class="border-t border-gray-100"><td class="p-3">${esc(p.name)}</td><td class="p-3">${esc(p.type)}</td><td class="p-3 text-green-600">${p.discount}%</td><td class="p-3 text-xs">${esc(p.start||'—')}</td><td class="p-3 text-xs">${esc(p.end)}</td><td class="p-3"><button onclick="removePromo(${i})" class="text-red-600 text-xs">Remove</button></td></tr>`).join('')}</tbody></table>`:'<p class="text-sm text-gray-500">No promotions yet.</p>';
+}
+async function savePromo(e){
+    e.preventDefault();
+    const form=e.target;
+    const raw=document.getElementById('promo-product').value;
+    const isAll=raw==='all';
+    const id=parseInt(raw);
+    const p=products.find(x=>x.id===id);
+    if(!p&&!isAll)return;
+    const type=document.getElementById('promo-type').value;
+    const discount=parseInt(document.getElementById('promo-discount').value)||10;
+    const nowLocal=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+    const start=document.getElementById('promo-start').value||nowLocal;
+    const end=document.getElementById('promo-end').value;
+    const productName=isAll?'All products':p.name;
+    const promos=JSON.parse(localStorage.getItem('wa_promotions')||'[]');
+    promos.unshift({productId:isAll?'all':id,name:productName,type:type,discount:discount,start:start,end:end});
+    localStorage.setItem('wa_promotions',JSON.stringify(promos));
+    renderPromos();playSuccessSound();form.reset();
+    adminToast('Promotion started! Notifying customers…');
+    try{
+        const c=await fetch('api/admin.php?action=csrf').then(r=>r.json());
+        const r=await fetch('api/notify.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'promotion_notify',csrf_token:c.csrf_token,type:type,discount:discount,start:start,end:end,productName:productName})}).then(r=>r.json());
+        adminToast(r.ok?('Promotion started! '+r.sent+' customer(s) emailed.'):('Promotion started, but email failed: '+(r.message||'unknown error')));
+    }catch(err){adminToast('Promotion started. Email notification failed — check api/storage/mail.log.');}
+}
+function removePromo(i){const p=JSON.parse(localStorage.getItem('wa_promotions')||'[]');p.splice(i,1);localStorage.setItem('wa_promotions',JSON.stringify(p));renderPromos();}
+function orderImage(o){
+    const it=(o.items||[])[0]||{};
+    if(it.image)return it.image;
+    const p=products.find(x=>x.id===it.id||x.name===it.name);
+    return p?(p.image||(p.images&&p.images[0])||'assets/wearadinkra-logo.png'):'assets/wearadinkra-logo.png';
+}
+function renderTopProductsPage(){
+    const box=document.getElementById('admin-top-products');
+    if(!box)return;
+    const list=topProductsList.length?topProductsList:[];
+    if(!list.length){box.innerHTML='<p class="text-sm text-gray-500">No products yet.</p>';return;}
+    const per=5;
+    const pages=Math.max(1,Math.ceil(list.length/per));
+    topProductsPage=((topProductsPage%pages)+pages)%pages;
+    const start=topProductsPage*per;
+    const rows=list.slice(start,start+per);
+    box.innerHTML='<div class="top-products-flash space-y-2">'+rows.map((x,i)=>{
+        const p=x.product||{};
+        const img=p.image||(p.images&&p.images[0])||'assets/wearadinkra-logo.png';
+        return '<div class="flex items-center gap-3 border border-gray-100 p-2 bg-white"><div class="w-12 h-12 bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden shrink-0"><img src="'+esc(img)+'" class="w-full h-full object-contain" alt="'+esc(x.name)+'"></div><div class="min-w-0 flex-1"><p class="text-sm font-medium text-[#0B132B] truncate">'+esc(x.name)+'</p><p class="text-[11px] text-gray-500">'+(x.qty?x.qty+' sold · ':'')+esc(p.category||'Product')+'</p></div><div class="text-right shrink-0"><p class="text-sm font-semibold text-[#0B132B]">'+money(p.price||0)+'</p><p class="text-[10px] text-gray-400">'+(start+i+1)+' / '+list.length+'</p></div></div>';
+    }).join('')+'</div><div class="flex items-center justify-between mt-3 text-[11px] text-gray-500"><span>Page '+(topProductsPage+1)+' of '+pages+'</span><span class="text-brand-sea">Auto-updates every 30s</span></div>';
+}
+function startTopProductsRotation(){
+    if(topProductsTimer){clearInterval(topProductsTimer);topProductsTimer=null;}
+    if(topProductsList.length<=5)return;
+    topProductsTimer=setInterval(()=>{topProductsPage++;renderTopProductsPage();},30000);
+}
+function render(){
+    renderPromos(); const orders=JSON.parse(localStorage.getItem('wa_orders')||'[]');
+    const reviews=JSON.parse(localStorage.getItem('wa_reviews')||'[]');
+    const customerMap={};
+    orders.forEach(o=>{const c=o.customer||{};if(c.email)customerMap[c.email]={name:c.name||'—',email:c.email,phone:c.phone||'—',orders:(customerMap[c.email]?customerMap[c.email].orders:0)+1};});
+    const customers=Object.values(customerMap);
+    const totalRevenue=orders.reduce((s,o)=>s+Number(o.total||0),0);
+    const stats=[
+        {icon:'fa-shirt',label:'Products',value:products.length,color:'text-blue-600'},
+        {icon:'fa-box',label:'Orders',value:orders.length,color:'text-brand-sea'},
+        {icon:'fa-users',label:'Customers',value:customers.length,color:'text-emerald-600'},
+        {icon:'fa-star',label:'Reviews',value:reviews.length,color:'text-amber-500'}
+    ];
+    document.getElementById('admin-stats').innerHTML=stats.map(s=>`<div class="card p-5"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-500 uppercase tracking-wider">${s.label}</p><p class="text-3xl font-bold text-[#0B132B] mt-2">${s.value}</p></div><span class="${s.color} text-xl"><i class="fa-solid ${s.icon}"></i></span></div></div>`).join('')+
+        `<div class="card p-5"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-500 uppercase tracking-wider">Total order amount</p><p class="text-2xl font-bold text-brand-sea mt-2">${money(totalRevenue)}</p></div><span class="text-brand-sea text-xl"><i class="fa-solid fa-coins"></i></span></div></div>`+
+        `<div class="card p-5"><div class="flex justify-between items-start"><div><p class="text-xs text-gray-500 uppercase tracking-wider">Total in USD</p><p class="text-2xl font-bold text-emerald-600 mt-2" id="admin-usd-total">$ ${(totalRevenue*adminUsdRate).toFixed(2)}</p></div><span class="text-emerald-600 text-xl"><i class="fa-solid fa-dollar-sign"></i></span></div></div>`;
+    document.getElementById('admin-recent-orders').innerHTML=orders.length?orders.slice(0,5).map(o=>`<div class="flex justify-between items-center border-b border-gray-100 py-3 last:border-0"><div><p class="text-sm font-semibold text-[#0B132B]">${o.id}</p><p class="text-xs text-gray-500">${esc(o.customer?o.customer.name:'Customer')} · ${o.date}</p></div><div class="text-right"><p class="text-sm font-semibold">${money(o.total)}</p><p class="text-[10px] text-green-600">Processing</p></div></div>`).join(''):'<p class="text-sm text-gray-500">No orders yet.</p>';
+    const sold={};orders.forEach(o=>(o.items||[]).forEach(i=>{if(i.name)sold[i.name]=(sold[i.name]||0)+(i.quantity||1);}));
+    const top=Object.entries(sold).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([name,qty])=>({name,qty,product:products.find(p=>p.name===name)}));
+    const fallback=products.slice(0,20).map(p=>({name:p.name,qty:0,product:p}));
+    const nextList = top.length ? top : fallback;
+    const listChanged = nextList.length !== topProductsList.length || nextList.map(x=>x.name).join('|') !== topProductsList.map(x=>x.name).join('|');
+    topProductsList = nextList;
+    if (listChanged) topProductsPage = 0;
+    renderTopProductsPage();
+    if (listChanged || !topProductsTimer) startTopProductsRotation();
+
+    // Sales chart with date selection
+    const chart=document.getElementById('admin-chart');
+    if(chart){
+        const range=document.getElementById('chart-range').value;
+        let list=orders.slice();
+        if(range!=='all'&&list.length){const days=parseInt(range);const filtered=list.filter(o=>{const d=new Date(o.date);return !isNaN(d)&&(Date.now()-d.getTime())<=days*86400000;});if(filtered.length)list=filtered;}
+        const from=document.getElementById('chart-from').value, to=document.getElementById('chart-to').value;
+        if(from)list=list.filter(o=>{const d=new Date(o.date);return !isNaN(d)&&d>=new Date(from+'T00:00:00');});
+        if(to)list=list.filter(o=>{const d=new Date(o.date);return !isNaN(d)&&d<=new Date(to+'T23:59:59');});
+        const buckets={};
+        list.forEach((o,i)=>{const d=new Date(o.date);const key=isNaN(d)?'Order '+(i+1):d.toLocaleDateString();buckets[key]=(buckets[key]||0)+Number(o.total||0);});
+        const entries=Object.entries(buckets).slice(-8);
+        const max=Math.max(1,...entries.map(e=>e[1]));
+        chart.innerHTML=entries.length?`<div class="flex items-end gap-3 h-44">${entries.map(([label,val])=>`<div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-brand-sea hover:bg-brand-dark transition-colors" style="height:${Math.max(8,(val/max)*140)}px" title="${money(val)}"></div><span class="text-[9px] text-gray-500 truncate w-full text-center">${label}</span></div>`).join('')}</div>`:'<p class="text-sm text-gray-500 py-10 text-center">No orders in this period.</p>';
+    }
+
+    // Products table with pagination + add button
+    const pp=paginate(products,prodPage,5);
+    document.getElementById('tab-products').innerHTML=`<div class="flex justify-end mb-4"><button onclick="openAddProduct()" class="bg-brand-dark text-white px-5 py-2.5 text-xs uppercase tracking-wider hover:bg-brand-sea"><i class="fa-solid fa-plus mr-2"></i>Add product</button></div><div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Product</th><th class="p-4 text-left">Category</th><th class="p-4 text-left">Stock</th><th class="p-4 text-right">Price</th><th class="p-4 text-left">Actions</th></tr></thead><tbody>${pp.rows.map(p=>`<tr class="border-t border-gray-100"><td class="p-4 flex items-center gap-3"><button onclick="openAdminProductImage(${p.id})" class="p-0 border-0 bg-transparent cursor-pointer"><img src="${p.image}" class="w-10 h-12 object-contain"></button><span class="font-medium">${esc(p.name)}</span></td><td class="p-4">${p.category}</td><td class="p-4"><span class="${p.stock>0?'text-green-600':'text-red-600'}">${p.stock}</span></td><td class="p-4 text-right font-semibold">${money(p.price)}</td><td class="p-4"><button onclick="openAddProduct(${p.id})" class="text-brand-sea underline text-xs">Edit</button></td></tr>`).join('')}</tbody></table><div class="p-4" id="prod-pager"></div></div>`;
+    pager('prod-pager',prodPage,pp.pages,'gotoProdPage');
+
+    document.getElementById('tab-orders').innerHTML=orders.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Image</th><th class="p-4 text-left">Order</th><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Date</th><th class="p-4 text-right">Total</th><th class="p-4 text-left">Status</th></tr></thead><tbody>${orders.map(o=>`<tr class="border-t border-gray-100"><td class="p-4"><button onclick="openAdminOrderImage('${o.id}')" class="w-10 h-12 p-0 border-0 bg-transparent cursor-pointer"><img src="${orderImage(o)}" class="w-10 h-12 object-contain bg-gray-50 border border-gray-200" alt="Order image"></button></td><td class="p-4 font-semibold">${o.id}<div class="text-[11px] text-gray-500 font-normal mt-1 space-y-0.5">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${i.symbol?` · ${esc(i.symbol)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')}</div></td><td class="p-4">${esc(o.customer?o.customer.name:'—')}<span class="block text-xs text-gray-500">${esc(o.customer?o.customer.email:'')}</span><span class="block text-xs text-gray-500">${esc(o.customer&&o.customer.phone?o.customer.phone:'—')}</span><span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 ${o.guest?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700'}">${o.guest?'Guest':'Account'}</span></td><td class="p-4 text-xs">${o.date}</td><td class="p-4 text-right font-semibold">${money(o.total)}</td><td class="p-4"><select onchange="updateOrderStatus('${o.id}',this.value)" class="border border-gray-300 px-2 py-1 text-xs"><option value="processing" ${o.status==='processing'?'selected':''}>Processing</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="in_transit" ${o.status==='in_transit'?'selected':''}>In transit</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option></select></td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No orders yet.</div>';
+
+    const cp=paginate(customers,custPage);
+    document.getElementById('tab-customers').innerHTML=customers.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Name</th><th class="p-4 text-left">Email</th><th class="p-4 text-left">Phone</th><th class="p-4 text-right">Orders</th></tr></thead><tbody>${cp.rows.map(c=>`<tr class="border-t border-gray-100"><td class="p-4 font-medium">${esc(c.name)}</td><td class="p-4">${esc(c.email)}</td><td class="p-4">${esc(c.phone)}</td><td class="p-4 text-right"><button onclick="openCustomerOrders('${esc(c.email)}')" class="text-brand-sea underline">${c.orders} order${c.orders===1?'':'s'}</button></td></tr>`).join('')}</tbody></table><div class="p-4" id="cust-pager"></div></div>`:'<div class="card p-10 text-center text-gray-500">No customers yet.</div>';
+    if(customers.length)pager('cust-pager',custPage,cp.pages,'gotoCustPage');
+
+    document.getElementById('tab-reviews').innerHTML=reviews.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Rating</th><th class="p-4 text-left">Review</th><th class="p-4 text-left">Date</th></tr></thead><tbody>${reviews.map(r=>`<tr class="border-t border-gray-100"><td class="p-4 font-medium">${esc(r.author)}</td><td class="p-4 text-amber-500">${'★'.repeat(r.rating)}</td><td class="p-4 max-w-md">${esc(r.comment)}</td><td class="p-4 text-xs">${esc(r.date||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No reviews yet.</div>';
+}
+function openAdminImageModal(){const m=document.getElementById('admin-image-modal');m.classList.remove('hidden');m.classList.add('flex');}
+function closeAdminImageModal(){const m=document.getElementById('admin-image-modal');m.classList.add('hidden');m.classList.remove('flex');}
+function showAdminMedia(media,index){
+    const main=document.getElementById('admin-image-main');
+    const m=media[index]||{};
+    main.innerHTML=m.video?'<video src="'+m.src+'" class="w-full h-full object-contain" controls></video>':'<img src="'+m.src+'" class="w-full h-full object-contain" alt="">';
+    document.querySelectorAll('#admin-image-thumbs > div').forEach((el,i)=>el.className='w-16 h-16 flex-shrink-0 border-2 '+(i===index?'border-brand-sea':'border-transparent')+' cursor-pointer');
+}
+function openAdminCarousel(title,images,video,price){
+    document.getElementById('admin-image-title').textContent=title;
+    document.getElementById('admin-image-price').textContent=price||'';
+    const media=(images||[]).map(src=>({src,type:'image'}));
+    if(video)media.push({src:video,type:'video'});
+    const thumbs=document.getElementById('admin-image-thumbs');
+    if(!media.length){thumbs.innerHTML='';document.getElementById('admin-image-main').innerHTML='<p class="text-sm text-gray-500">No media</p>';}
+    else{
+        thumbs.innerHTML=media.map((m,i)=>'<div onclick="showAdminMedia(window.adminMedia,'+i+')" class="w-16 h-16 flex-shrink-0 border-2 '+(i===0?'border-brand-sea':'border-transparent')+' cursor-pointer">'+(m.type==='video'?'<div class="w-full h-full bg-brand-dark text-white flex items-center justify-center"><i class="fa-solid fa-play"></i></div>':'<img src="'+m.src+'" class="w-full h-full object-cover">')+'</div>').join('');
+        window.adminMedia=media;showAdminMedia(media,0);
+    }
+    openAdminImageModal();
+}
+function openAdminOrderImage(id){
+    const o=(JSON.parse(localStorage.getItem('wa_orders')||'[]')).find(x=>x.id===id);
+    if(!o)return;
+    const items=o.items||[];
+    const first=products.find(p=>p.id===(items[0]||{}).id)||{};
+    openAdminCarousel(o.id,items.map(i=>i.image||first.image).filter(Boolean),first.video,money(o.total));
+}
+function openAdminProductImage(id){
+    const p=products.find(x=>x.id===id);
+    if(!p)return;
+    openAdminCarousel(p.name,p.images&&p.images.length?p.images:[p.image],p.video,money(p.price));
+}
+let customerOrderPage=1;
+function openCustomerOrders(email){
+    const orders=(JSON.parse(localStorage.getItem('wa_orders')||'[]')).filter(o=>o.customer&&o.customer.email===email);
+    document.getElementById('customer-orders-title').textContent='Orders · '+email;
+    const body=document.getElementById('customer-orders-body');
+    const render=()=>{
+        const p=paginate(orders,customerOrderPage,5);
+        body.innerHTML=p.rows.length?`<table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-3 text-left">Order</th><th class="p-3 text-left">Items</th><th class="p-3 text-left">Date</th><th class="p-3 text-left">Status</th><th class="p-3 text-right">Total</th></tr></thead><tbody>${p.rows.map(o=>`<tr class="border-t border-gray-100 align-top"><td class="p-3 font-medium">${o.id}</td><td class="p-3 text-xs text-gray-600">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')||'—'}</td><td class="p-3 text-xs">${esc(o.date)}</td><td class="p-3 text-xs">${esc(o.status||'processing')}</td><td class="p-3 text-right font-semibold">${money(o.total)}</td></tr>`).join('')}</tbody></table>`:'<p class="text-sm text-gray-500">No orders for this customer.</p>';
+        pager('customer-orders-pager',customerOrderPage,p.pages,'gotoCustomerOrderPage');
+    };
+    window.customerOrders=orders;
+    customerOrderPage=1;render();
+    const m=document.getElementById('customer-orders-modal');m.classList.remove('hidden');m.classList.add('flex');
+}
+function gotoCustomerOrderPage(p){customerOrderPage=p;openCustomerOrdersRefresh();}
+function openCustomerOrdersRefresh(){const e=document.getElementById('customer-orders-title').textContent.replace('Orders · ','');openCustomerOrders(e);}
+function closeCustomerOrders(){const m=document.getElementById('customer-orders-modal');m.classList.add('hidden');m.classList.remove('flex');}
+async function updateOrderStatus(id,status){
+    const orders=JSON.parse(localStorage.getItem('wa_orders')||'[]');
+    const o=orders.find(x=>x.id===id);
+    if(o){o.status=status;if(status==='delivered')o.delivered=true;localStorage.setItem('wa_orders',JSON.stringify(orders));}
+    const csrf=await fetch('api/admin.php?action=csrf',{credentials:'same-origin'}).then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
+    try{
+        const res=await fetch('api/orders.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'status',csrf_token:csrf,order_id:id,status})});
+        const j=await res.json().catch(()=>({}));
+        if(!res.ok||!j.ok){ adminToast((j&&(j.message||j.error))||'Could not update order status.','error'); return; }
+        const savedStatus = j.status || status;
+        const ordersNow=JSON.parse(localStorage.getItem('wa_orders')||'[]');
+        const o2=ordersNow.find(x=>x.id===id);
+        if(o2){o2.status=savedStatus;if(savedStatus==='delivered')o2.delivered=true;localStorage.setItem('wa_orders',JSON.stringify(ordersNow));}
+        if (typeof ordersCache !== 'undefined' && Array.isArray(ordersCache)) { const local = ordersCache.find(x=>x.id===id); if(local) local.status=savedStatus; }
+        adminToast('Order status updated to ' + (savedStatus.replace('_',' ')) + '.');playSuccessSound();
+        render();
+    }catch(e){ console.error('updateOrderStatus failed', e); adminToast((e && e.message) ? ('Could not update order status: ' + e.message) : 'Could not update order status.','error'); }
+}
+function gotoProdPage(p){prodPage=p;render();}
+function gotoCustPage(p){custPage=p;render();}
+let editingId=null;
+function openAddProduct(id){
+    const box=document.getElementById('add-product-modal');
+    box.classList.remove('hidden');box.classList.add('flex');
+    editingId=id||null;
+    document.getElementById('add-product-modal-title').textContent=editingId?'Edit product':'Add product';
+    document.querySelector('#add-product-modal button[type="submit"]').textContent=editingId?'Update product':'Publish product';
+    if(editingId){
+        const p=products.find(x=>x.id===editingId);
+        if(p){
+            document.getElementById('np-name').value=p.name;
+            document.getElementById('np-description').value=p.description||'';
+            document.getElementById('np-price').value=p.price;
+            document.getElementById('np-stock').value=p.stock;
+            document.getElementById('np-category').value=[...document.getElementById('np-category').options].some(o=>o.value===p.category)?p.category:'All';
+            document.getElementById('np-category-new').value='';
+            document.getElementById('np-video').value=p.video||'';
+            uploadImages=(p.images&&p.images.length)?p.images.slice():(p.image?[p.image]:[]);
+            renderUploadPreviews();
+        }
+    } else { uploadImages=[]; }
+    uploadPending=0;renderUploadPreviews();updateUploadProgress();
+    const m=document.getElementById('add-product-msg');if(m)m.classList.add('hidden');
+    bindUpload();
+}
+function closeAddProduct(){const b=document.getElementById('add-product-modal');b.classList.add('hidden');b.classList.remove('flex');}
+let uploadImages=[];
+let uploadPending=0;
+function updateUploadProgress(){
+    const wrap=document.getElementById('np-progress-wrap');
+    const bar=document.getElementById('np-progress-bar');
+    const text=document.getElementById('np-progress-text');
+    const submit=document.querySelector('#add-product-modal button[type="submit"]');
+    if(wrap)wrap.classList.remove('hidden');
+    const done=uploadImages.length;
+    const total=done+uploadPending;
+    const pct=total?Math.round((done/total)*100):0;
+    if(bar)bar.style.width=pct+'%';
+    if(text)text.textContent=uploadPending?('Processing images… '+done+' / '+total):(done?done+' images ready':'No images selected');
+    if(submit)submit.disabled=uploadPending>0;
+}
+function setupUpload(){
+    const zone=document.getElementById('np-dropzone');
+    const input=document.getElementById('np-files');
+    if(!zone||input||zone.dataset.bound)return;
+}
+function bindUpload(){
+    const zone=document.getElementById('np-dropzone');
+    const input=document.getElementById('np-files');
+    if(!zone||!input||zone.dataset.bound)return;
+    zone.dataset.bound='1';
+    zone.addEventListener('click',()=>input.click());
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('bg-brand-light/20');});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('bg-brand-light/20'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('bg-brand-light/20');handleFiles(e.dataTransfer.files);});
+    input.addEventListener('change',()=>{handleFiles(input.files);input.value='';});
+}
+async function uploadImageBlob(blob){
+    const csrf = await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(r=>r.csrf_token).catch(()=>null);
+    const fd = new FormData();
+    fd.append('csrf_token', csrf || '');
+    fd.append('image', blob, 'product.jpg');
+    const res = await fetch('api/upload.php', {method:'POST', body:fd, credentials:'same-origin'}).then(r=>r.json()).catch(()=>null);
+    if(res && res.ok && res.path) return res.path;
+    throw new Error((res && res.message) || 'Upload failed');
+}
+function handleFiles(files){
+    const list=Array.from(files||[]).filter(f=>f.type.startsWith('image/')).slice(0,10-uploadImages.length-uploadPending);
+    if(!list.length)return;
+    uploadPending+=list.length;
+    updateUploadProgress();
+    list.forEach(file=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+            const img=new Image();
+            img.onload=async ()=>{
+                try {
+                    const canvas=document.createElement('canvas');
+                    const scale=Math.min(1,1200/img.width);
+                    canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+                    canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+                    const blob = await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',0.82));
+                    if(!blob) throw new Error('Image processing failed');
+                    const path = await uploadImageBlob(blob);
+                    uploadImages.push(path);
+                } catch(err) {
+                    console.error(err);
+                    adminToast('Image upload failed. Please try again.');
+                } finally {
+                    uploadPending--;
+                    renderUploadPreviews();
+                    updateUploadProgress();
+                }
+            };
+            img.onerror=()=>{uploadPending--;updateUploadProgress();};
+            img.src=e.target.result;
+        };
+        reader.onerror=()=>{uploadPending--;updateUploadProgress();};
+        reader.readAsDataURL(file);
+    });
+}
+function renderUploadPreviews(){
+    const box=document.getElementById('np-previews');
+    if(box)box.innerHTML=uploadImages.map((src,i)=>`<div class="relative"><img src="${src}" class="w-16 h-16 object-cover border border-gray-200"><button type="button" onclick="removeUpload(${i})" class="absolute -top-2 -right-2 bg-brand-dark text-white rounded-full w-5 h-5 text-[10px]"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
+    const c=document.getElementById('np-count');if(c)c.textContent=(uploadImages.length+uploadPending)+' / 10 images selected';
+}
+function removeUpload(i){uploadImages.splice(i,1);renderUploadPreviews();updateUploadProgress();}
+function playSuccessSound(){
+    try{
+        const ctx=new (window.AudioContext||window.webkitAudioContext)();
+        [523.25,659.25,783.99].forEach((f,i)=>{
+            const o=ctx.createOscillator(),g=ctx.createGain();
+            o.type='sine';o.frequency.value=f;
+            g.gain.setValueAtTime(0.0001,ctx.currentTime+i*0.12);
+            g.gain.exponentialRampToValueAtTime(0.18,ctx.currentTime+i*0.12+0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+i*0.12+0.28);
+            o.connect(g);g.connect(ctx.destination);
+            o.start(ctx.currentTime+i*0.12);o.stop(ctx.currentTime+i*0.12+0.3);
+        });
+    }catch(e){}
+}
+function adminToast(text){
+    let t=document.getElementById('admin-toast');
+    if(!t){t=document.createElement('div');t.id='admin-toast';t.className='fixed bottom-6 right-6 bg-brand-dark text-white px-6 py-3 text-sm z-[80] shadow-xl';document.body.appendChild(t);}
+    t.textContent=text;t.classList.remove('hidden');
+    setTimeout(()=>t.classList.add('hidden'),3000);
+}
+async function saveProduct(e){
+    e.preventDefault();
+    const name=document.getElementById('np-name').value.trim();
+    const price=parseFloat(document.getElementById('np-price').value);
+    if(!name||!(price>0)){document.getElementById('add-product-msg').textContent='Name and price are required.';return;}
+    if(!uploadImages.length){document.getElementById('add-product-msg').textContent='Add at least one image.';return;}
+    if(uploadPending>0){document.getElementById('add-product-msg').textContent='Images are still processing. Please wait.';return;}
+    const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(r=>r.csrf_token).catch(()=>null);
+    const catVal=(document.getElementById('np-category-new').value.trim()||document.getElementById('np-category').value);
+    const result=await fetch('api/products.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        action:editingId?'update':'add',id:editingId,csrf_token:csrf,name,price,
+        description:document.getElementById('np-description').value.trim(),
+        image:uploadImages[0]||'',
+        category:catVal,
+        stock:document.getElementById('np-unlimited').checked?9999:(parseInt(document.getElementById('np-stock').value)||0),
+        images:uploadImages,
+        video:document.getElementById('np-video').value.trim()
+    })}).then(r=>r.json()).catch(()=>({ok:false,message:'Network error.'}));
+    if(!result.ok){document.getElementById('add-product-msg').textContent=result.message;return;}
+    if(catVal && ![...document.getElementById('np-category').options].some(o=>o.value===catVal || o.textContent===catVal)){
+        const opt=document.createElement('option'); opt.value=catVal; opt.textContent=catVal; document.getElementById('np-category').appendChild(opt);
+    }
+    products=result.products||products;
+    editingId=null;
+    uploadImages=[];uploadPending=0;renderUploadPreviews();updateUploadProgress();prodPage=1;
+    if(e.target&&e.target.reset)e.target.reset();
+    playSuccessSound();
+    adminToast('Product published successfully!');
+    render();
+    const m=document.getElementById('add-product-msg');m.classList.remove('hidden');m.textContent='Product published to the store front.';setTimeout(()=>m.classList.add('hidden'),2500);
+}
+async function settingsPane(name,btn){
+    document.querySelectorAll('.settings-pane').forEach(p=>p.classList.add('hidden'));
+    const pane=document.getElementById('set-pane-'+name);
+    if(pane)pane.classList.remove('hidden');
+    document.querySelectorAll('.settings-tab').forEach(t=>{t.className='settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50';});
+    if(btn)btn.className='settings-tab px-5 py-2 text-xs uppercase tracking-wider bg-brand-dark text-white';
+}
+let seoSettings={};
+async function saveAdminProfile(){
+    const csrf=await fetch('api/admin.php?action=csrf').then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
+    const result=await fetch('api/admin.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update_profile',csrf_token:csrf,name:document.getElementById('admin-profile-name').value,email:document.getElementById('admin-profile-email').value,phone:document.getElementById('admin-profile-phone').value,password:document.getElementById('admin-profile-password').value})}).then(x=>x.json()).catch(()=>({ok:false,message:'Network error.'}));
+    const m=document.getElementById('admin-profile-msg');m.classList.remove('hidden');m.textContent=result.message;m.className='text-xs mt-3 '+(result.ok?'text-green-700':'text-red-600');
+    if(result.ok){document.getElementById('admin-profile-password').value='';playSuccessSound();adminToast('Admin account updated.');}
+}
+async function loadSettings(){
+    try{const r=await fetch('api/seo.php?action=all').then(x=>x.json());if(r.ok)seoSettings=r.settings||{};}catch(e){}
+    let s={};try{s=JSON.parse(localStorage.getItem('wa_settings')||'{}');}catch(e){}
+    s=Object.assign({},seoSettings,s);
+    const map={
+        'set-seo-title':'siteTitle','set-title-template':'titleTemplate','set-seo-desc':'metaDescription','set-seo-keys':'keywords','set-base-url':'baseUrl',
+        'set-og-title':'ogTitle','set-og-desc':'ogDescription','set-og-image':'ogImage','set-og-type':'ogType',
+        'set-tw-handle':'twitterHandle','set-tw-title':'twitterTitle','set-tw-desc':'twitterDescription','set-tw-image':'twitterImage',
+        'set-theme-color':'themeColor','set-favicon':'favicon',
+        'set-gsc':'gscToken','set-bing':'bingToken','set-ga':'gaId','set-gtm':'gtmId','set-adsense':'adsenseId',
+        'set-org-name':'orgName','set-org-desc':'orgDescription','set-org-logo':'orgLogo',
+        'set-fb-page':'facebookPage','set-tw-profile':'twitterProfile','set-ig-url':'instagramUrl','set-li-url':'linkedinUrl','set-yt-url':'youtubeUrl',
+        'set-google-id':'googleId','set-google-secret':'googleSecret','set-fb-id':'fbId','set-fb-secret':'fbSecret'
+    };
+    Object.keys(map).forEach(id=>{const el=document.getElementById(id);if(el&&s[map[id]]!==undefined&&s[map[id]]!==null)el.value=s[map[id]];});
+    const checks={
+        'set-write-tags':s.writeTags!==false,'set-allow-index':s.allowIndex!==false,'set-allow-follow':s.allowFollow!==false,
+        'set-list-listings':s.listListings!==false,
+        'set-notif-orders':s.notifOrders!==false,'set-notif-reviews':s.notifReviews!==false,'set-notif-users':!!s.notifUsers
+    };
+    Object.keys(checks).forEach(id=>{const el=document.getElementById(id);if(el)el.checked=checks[id];});
+    updateSeoStatus();
+}
+function updateSeoStatus(){
+    const el=document.getElementById('seo-status');if(!el)return;
+    const tags=document.getElementById('set-write-tags').checked, index=document.getElementById('set-allow-index').checked, follow=document.getElementById('set-allow-follow').checked;
+    el.textContent=(tags?'Tags on':'Tags off')+', '+(index?'indexing allowed':'indexing blocked')+', '+(follow?'links followed':'links not followed')+(index&&follow?' — open to search engines':' — closed to search engines');
+    el.className='text-xs mt-4 p-3 '+(index&&follow?'text-green-700 bg-green-50':'text-red-700 bg-red-50');
+}
+async function saveSettings(e){
+    e.preventDefault();
+    const v=id=>(document.getElementById(id)||{}).value||'';
+    const c=id=>!!(document.getElementById(id)||{}).checked;
+    const payload={
+        writeTags:c('set-write-tags'),allowIndex:c('set-allow-index'),allowFollow:c('set-allow-follow'),
+        siteTitle:v('set-seo-title'),titleTemplate:v('set-title-template'),metaDescription:v('set-seo-desc'),keywords:v('set-seo-keys'),baseUrl:v('set-base-url'),
+        ogTitle:v('set-og-title'),ogDescription:v('set-og-desc'),ogImage:v('set-og-image'),ogType:v('set-og-type'),
+        twitterHandle:v('set-tw-handle'),twitterTitle:v('set-tw-title'),twitterDescription:v('set-tw-desc'),twitterImage:v('set-tw-image'),
+        themeColor:v('set-theme-color'),favicon:v('set-favicon'),listListings:c('set-list-listings'),
+        gscToken:v('set-gsc'),bingToken:v('set-bing'),gaId:v('set-ga'),gtmId:v('set-gtm'),adsenseId:v('set-adsense'),
+        orgName:v('set-org-name'),orgDescription:v('set-org-desc'),orgLogo:v('set-org-logo'),
+        facebookPage:v('set-fb-page'),twitterProfile:v('set-tw-profile'),instagramUrl:v('set-ig-url'),linkedinUrl:v('set-li-url'),youtubeUrl:v('set-yt-url'),
+        googleId:v('set-google-id'),googleSecret:v('set-google-secret'),fbId:v('set-fb-id'),fbSecret:v('set-fb-secret'),
+        notifOrders:c('set-notif-orders'),notifReviews:c('set-notif-reviews'),notifUsers:c('set-notif-users')
+    };
+    const csrf=await fetch('api/admin.php?action=csrf').then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
+    const result=await fetch('api/seo.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',csrf_token:csrf,...payload})}).then(x=>x.json()).catch(()=>({ok:false,message:'Network error.'}));
+    localStorage.setItem('wa_settings',JSON.stringify(payload));
+    seoSettings=result.settings||payload;
+    playSuccessSound();adminToast(result.ok?result.message:'Settings saved on this device.');
+    const m=document.getElementById('settings-msg');m.classList.remove('hidden');m.textContent=result.ok?result.message:'Saved locally.';setTimeout(()=>m.classList.add('hidden'),3000);
+}
+function readNotifKeys(){try{return JSON.parse(localStorage.getItem('wa_read_notifs')||'[]');}catch(e){return [];}}
+function saveReadNotif(key){const keys=readNotifKeys();if(!keys.includes(key)){keys.push(key);localStorage.setItem('wa_read_notifs',JSON.stringify(keys));}}
+async function checkNotifications(){
+    try{
+        const r=await fetch('api/orders.php?action=list').then(x=>x.json());
+        let orders=(r.ok&&r.orders)?r.orders:[];
+        if(!orders.length)orders=(JSON.parse(localStorage.getItem('wa_orders')||'[]')).map(o=>({order_id:o.id,customer:o.customer?o.customer.name:'Customer',total:o.total,created_at:o.date,is_new:1}));
+        const read=readNotifKeys();
+        const visibleOrders=orders.filter(o=>!read.includes('order:'+o.order_id));
+        const newCount=visibleOrders.filter(o=>Number(o.is_new)===1).length;
+        const badge=document.getElementById('notif-badge');
+        if(badge){badge.textContent=newCount>9?'9+':newCount;badge.classList.toggle('hidden',newCount===0);}
+        const list=document.getElementById('notif-list');
+        if(list){
+            let html=visibleOrders.length?visibleOrders.slice(0,10).map(o=>`<div data-notif="order:${o.order_id}" class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${Number(o.is_new)?'bg-brand-light/10':''}" onclick="dismissNotification(this,'order:${o.order_id}','orders')"><p class="text-sm font-semibold text-[#0B132B]">New order ${o.order_id}</p><p class="text-xs text-gray-500">${esc(o.customer)} · GH₵ ${Number(o.total).toFixed(2)}</p><p class="text-[10px] text-gray-400 mt-1">${o.created_at}</p></div>`).join(''):'';
+            const reviews=JSON.parse(localStorage.getItem('wa_reviews')||'[]');
+            if(reviews.length && !read.includes('review'))html+='<div data-notif="review" class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50" onclick="dismissNotification(this,\'review\',\'reviews\')"><p class="text-sm font-semibold text-[#0B132B]">New product review</p><p class="text-xs text-gray-500">'+esc(reviews[0].author)+' · '+reviews[0].rating+'★</p></div>';
+            list.innerHTML=html||'<p class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet.</p>';
+        }
+    }catch(e){}
+}
+function dismissNotification(el,key,page){
+    saveReadNotif(key);
+    if(el)el.remove();
+    const panel=document.getElementById('notif-panel');
+    if(panel)panel.classList.add('hidden');
+    checkNotifications();
+    const btn=Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.trim().toLowerCase().includes(page));
+    if(btn)btn.click();
+}
+function toggleNotifications(){const p=document.getElementById('notif-panel');if(p)p.classList.toggle('hidden');}
+function goToNotification(page){
+    document.getElementById('notif-panel').classList.add('hidden');
+    const btn=Array.from(document.querySelectorAll('.nav-item')).find(b=>b.textContent.trim().toLowerCase().includes(page));
+    if(btn)btn.click();
+}
+async function markNotificationsSeen(){
+    document.querySelectorAll('#notif-list [data-notif]').forEach(el=>saveReadNotif(el.getAttribute('data-notif')));
+    const csrf=await fetch('api/admin.php?action=csrf').then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
+    await fetch('api/orders.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'seen',csrf_token:csrf})}).catch(()=>{});
+    checkNotifications();
+}
+function openMobileSidebar(){
+    const overlay=document.getElementById('mobile-side-overlay');
+    const drawer=document.getElementById('mobile-side-drawer');
+    if(overlay)overlay.classList.remove('hidden');
+    if(drawer){drawer.classList.remove('-translate-x-full');drawer.classList.add('translate-x-0');}
+}
+function closeMobileSidebar(){
+    const overlay=document.getElementById('mobile-side-overlay');
+    const drawer=document.getElementById('mobile-side-drawer');
+    if(overlay)overlay.classList.add('hidden');
+    if(drawer){drawer.classList.add('-translate-x-full');drawer.classList.remove('translate-x-0');}
+}
+function toggleAdminMode(){
+    document.body.classList.toggle('admin-dark');
+    document.getElementById('admin-mode-icon').className=document.body.classList.contains('admin-dark')?'fa-solid fa-sun':'fa-regular fa-moon';
+}
+function toggleSidebar(){
+    const a=document.getElementById('admin-sidebar');
+    a.classList.toggle('collapsed');
+    document.getElementById('sidebar-arrow').className=a.classList.contains('collapsed')?'fa-solid fa-arrow-right':'fa-solid fa-arrow-left';
+}
+let visitPage=1;
+async function renderVisits(){
+    let data={visits:[]};
+    try{data=await fetch('api/visits.php?action=list').then(x=>x.json());}catch(e){}
+    const visits=data.visits||[];
+    const total=document.getElementById('visits-total');
+    if(total)total.textContent=visits.length+' visits recorded';
+    const rank=(key)=>{const c={};visits.forEach(v=>{const k=(v[key]||'Unknown');c[k]=(c[k]||0)+1;});return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);};
+    const analysis=document.getElementById('visits-analysis');
+    if(analysis){
+        const groups=[['Traffic source','source'],['Country','country'],['Device','device']];
+        analysis.innerHTML=groups.map(([title,key])=>'<div><p class="text-xs font-semibold text-brand-dark mb-3">Top 5 '+title+'</p>'+(rank(key).length?rank(key).map(([name,n])=>'<div class="mb-2"><div class="flex justify-between text-[11px]"><span class="truncate">'+esc(name)+'</span><span>'+n+'</span></div><div class="h-1 bg-gray-100 mt-1"><div class="h-full bg-brand-sea" style="width:'+Math.round(n/visits.length*100)+'%"></div></div></div>').join(''):'<p class="text-xs text-gray-500">No data</p>')+'</div>').join('');
+    }
+    const buckets={};
+    visits.forEach(v=>{const d=new Date(v.created_at);const key=isNaN(d)?'Unknown':d.toLocaleDateString();buckets[key]=(buckets[key]||0)+1;});
+    const entries=Object.entries(buckets).slice(-10);
+    const max=Math.max(1,...entries.map(e=>e[1]));
+    const chart=document.getElementById('visits-chart');
+    if(chart)chart.innerHTML=entries.length?`<div class="flex items-end gap-2 h-44">${entries.map(([label,val])=>`<div class="flex-1 flex flex-col items-center gap-2"><div class="w-full bg-brand-sea" style="height:${Math.max(8,(val/max)*140)}px" title="${val} visits"></div><span class="text-[9px] text-gray-500 w-full text-center truncate">${label}</span></div>`).join('')}</div>`:'<p class="text-sm text-gray-500 py-10 text-center">No visits recorded yet.</p>';
+    const list=document.getElementById('visits-list');
+    if(list){const vp=paginate(visits,visitPage,6);list.innerHTML=vp.rows.length?vp.rows.map(v=>`<tr class="border-t border-gray-100"><td class="p-4 text-xs">${esc(v.created_at)}</td><td class="p-4">${esc(v.city||'—')}</td><td class="p-4">${esc(v.country||'Unknown')}</td><td class="p-4 text-brand-sea">${esc(v.source||'Direct')}</td><td class="p-4 text-xs">${esc(v.page||'/')}</td><td class="p-4">${esc(v.device||'—')}</td></tr>`).join(''):'<tr><td colspan="6" class="p-8 text-center text-gray-500">No visitors yet.</td></tr>';pager('visits-pager',visitPage,vp.pages,'gotoVisitPage');}
+}
+function gotoVisitPage(p){visitPage=p;renderVisits();}
+async function adminTab(name,btn){
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
+    document.getElementById('tab-'+name).classList.remove('hidden');
+    document.querySelectorAll('.nav-item').forEach(n=>{
+        n.classList.remove('active');n.classList.remove('text-brand-sea');
+        const call=n.getAttribute('onclick')||'';
+        if(call.includes("'"+name+"'"))n.classList.add('active');
+    });
+    if(btn)btn.classList.add('active');
+    closeMobileSidebar();
+    document.getElementById('page-title').textContent=name.charAt(0).toUpperCase()+name.slice(1);
+    if(name==='visits')renderVisits();
+}
+async function adminLogout(){await api('logout');location.href='admin-login.html';}
+boot();
+</script>
+</body>
+</html>
