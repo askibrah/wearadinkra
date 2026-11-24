@@ -28,6 +28,7 @@ function wa_user_public(array $u): array
         'id' => (int)$u['id'],
         'name' => $u['name'],
         'email' => $u['email'],
+        'phone' => (string)($u['phone'] ?? ''),
         'status' => $u['status'],
     ];
 }

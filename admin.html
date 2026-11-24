@@ -450,7 +450,7 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 let adminUsdRate=0.085;
 async function loadAdminRate(){try{const r=await fetch('api/rate.php').then(x=>x.json());if(r.ok&&r.rate)adminUsdRate=r.rate;}catch(e){}render();}
 let products=[];
-let prodPage=1, custPage=1;
+let prodPage=1, custPage=1, orderPage=1;
 let topProductsList=[], topProductsPage=0, topProductsTimer=null;
 function paginate(list,page,per=10){const start=(page-1)*per;return {rows:list.slice(start,start+per),pages:Math.max(1,Math.ceil(list.length/per))};}
 function pager(id,page,pages,onclick){let h='<div class="flex justify-end items-center gap-2 mt-4">';h+=`<button onclick="${onclick}(${Math.max(1,page-1)})" class="px-3 py-1.5 border border-gray-300 text-xs hover:bg-brand-dark hover:text-white">Prev</button>`;for(let i=1;i<=pages;i++)h+=`<button onclick="${onclick}(${i})" class="px-3 py-1.5 text-xs border ${i===page?'bg-brand-dark text-white':'border-gray-300 hover:bg-gray-50'}">${i}</button>`;h+=`<button onclick="${onclick}(${Math.min(pages,page+1)})" class="px-3 py-1.5 border border-gray-300 text-xs hover:bg-brand-dark hover:text-white">Next</button></div>`;document.getElementById(id).innerHTML=h;}
@@ -574,6 +574,15 @@ function startTopProductsRotation(){
     if(topProductsList.length<=5)return;
     topProductsTimer=setInterval(()=>{topProductsPage++;renderTopProductsPage();},30000);
 }
+    async function deleteAdminOrder(id){
+        if(!confirm('Delete order '+id+'?'))return;
+        try{
+            const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(x=>x.csrf_token).catch(()=>null);
+            const res=await fetch('api/orders.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',csrf_token:csrf,order_id:id})}).then(r=>r.json());
+            adminToast(res.message||(res.ok?'Order deleted.':'Could not delete order.'));
+            if(res.ok){render();}
+        }catch(e){adminToast('Could not delete order.');}
+    }
 function render(){
     renderPromos(); const orders=JSON.parse(localStorage.getItem('wa_orders')||'[]');
     const reviews=JSON.parse(localStorage.getItem('wa_reviews')||'[]');
@@ -622,7 +631,24 @@ function render(){
     document.getElementById('tab-products').innerHTML=`<div class="flex justify-end mb-4"><button onclick="openAddProduct()" class="bg-brand-dark text-white px-5 py-2.5 text-xs uppercase tracking-wider hover:bg-brand-sea"><i class="fa-solid fa-plus mr-2"></i>Add product</button></div><div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Product</th><th class="p-4 text-left">Category</th><th class="p-4 text-left">Stock</th><th class="p-4 text-right">Price</th><th class="p-4 text-left">Actions</th></tr></thead><tbody>${pp.rows.map(p=>`<tr class="border-t border-gray-100"><td class="p-4 flex items-center gap-3"><button onclick="openAdminProductImage(${p.id})" class="p-0 border-0 bg-transparent cursor-pointer"><img src="${p.image}" class="w-10 h-12 object-contain"></button><span class="font-medium">${esc(p.name)}</span></td><td class="p-4">${p.category}</td><td class="p-4"><span class="${p.stock>0?'text-green-600':'text-red-600'}">${p.stock}</span></td><td class="p-4 text-right font-semibold">${money(p.price)}</td><td class="p-4"><button onclick="openAddProduct(${p.id})" class="text-brand-sea underline text-xs">Edit</button></td></tr>`).join('')}</tbody></table><div class="p-4" id="prod-pager"></div></div>`;
     pager('prod-pager',prodPage,pp.pages,'gotoProdPage');
 
-    document.getElementById('tab-orders').innerHTML=orders.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Image</th><th class="p-4 text-left">Order</th><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Date</th><th class="p-4 text-right">Total</th><th class="p-4 text-left">Status</th></tr></thead><tbody>${orders.map(o=>`<tr class="border-t border-gray-100"><td class="p-4"><button onclick="openAdminOrderImage('${o.id}')" class="w-10 h-12 p-0 border-0 bg-transparent cursor-pointer"><img src="${orderImage(o)}" class="w-10 h-12 object-contain bg-gray-50 border border-gray-200" alt="Order image"></button></td><td class="p-4 font-semibold">${o.id}<div class="text-[11px] text-gray-500 font-normal mt-1 space-y-0.5">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${i.symbol?` · ${esc(i.symbol)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')}</div></td><td class="p-4">${esc(o.customer?o.customer.name:'—')}<span class="block text-xs text-gray-500">${esc(o.customer?o.customer.email:'')}</span><span class="block text-xs text-gray-500">${esc(o.customer&&o.customer.phone?o.customer.phone:'—')}</span><span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 ${o.guest?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700'}">${o.guest?'Guest':'Account'}</span></td><td class="p-4 text-xs">${o.date}</td><td class="p-4 text-right font-semibold">${money(o.total)}</td><td class="p-4"><select onchange="updateOrderStatus('${o.id}',this.value)" class="border border-gray-300 px-2 py-1 text-xs"><option value="processing" ${o.status==='processing'?'selected':''}>Processing</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="in_transit" ${o.status==='in_transit'?'selected':''}>In transit</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option></select></td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No orders yet.</div>';
+    const op=paginate(orders,orderPage,6);
+    document.getElementById('tab-orders').innerHTML=orders.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Image</th><th class="p-4 text-left">Order</th><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Date</th><th class="p-4 text-right">Total</th><th class="p-4 text-left">Status</th></tr></thead><tbody>${op.rows.map(o=>`<tr class="border-t border-gray-100"><td class="p-4"><button onclick="openAdminOrderImage('${o.id}')" class="w-10 h-12 p-0 border-0 bg-transparent cursor-pointer"><img src="${orderImage(o)}" class="w-10 h-12 object-contain bg-gray-50 border border-gray-200" alt="Order image"></button></td><td class="p-4 font-semibold">${o.id}<div class="text-[11px] text-gray-500 font-normal mt-1 space-y-0.5">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${i.symbol?` · ${esc(i.symbol)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')}</div></td><td class="p-4">${esc(o.customer?o.customer.name:'—')}<span class="block text-xs text-gray-500">${esc(o.customer?o.customer.email:'')}</span><span class="block text-xs text-gray-500">${esc(o.customer&&o.customer.phone?o.customer.phone:'—')}</span><span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 ${o.guest?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700'}">${o.guest?'Guest':'Account'}</span></td><td class="p-4 text-xs">${o.date}</td><td class="p-4 text-right font-semibold">${money(o.total)}</td><td class="p-4"><select onchange="updateOrderStatus('${o.id}',this.value)" class="border border-gray-300 px-2 py-1 text-xs"><option value="processing" ${o.status==='processing'?'selected':''}>Processing</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="in_transit" ${o.status==='in_transit'?'selected':''}>In transit</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option></select></td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No orders yet.</div>';
+
+    if(orders.length){
+        const host=document.getElementById('tab-orders');
+        const pagerBox=document.createElement('div');
+        pagerBox.id='order-pager'; pagerBox.className='p-4';
+        host.querySelector('.card').appendChild(pagerBox);
+        pager('order-pager',orderPage,op.pages,'gotoOrderPage');
+        host.querySelectorAll('tbody tr').forEach((tr,i)=>{
+            const id=op.rows[i].id;
+            const btn=document.createElement('button');
+            btn.type='button'; btn.textContent='Delete';
+            btn.className='plain-btn text-red-600 text-xs underline block mt-2';
+            btn.onclick=()=>deleteAdminOrder(id);
+            tr.lastElementChild.appendChild(btn);
+        });
+    }
 
     const cp=paginate(customers,custPage);
     document.getElementById('tab-customers').innerHTML=customers.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Name</th><th class="p-4 text-left">Email</th><th class="p-4 text-left">Phone</th><th class="p-4 text-right">Orders</th></tr></thead><tbody>${cp.rows.map(c=>`<tr class="border-t border-gray-100"><td class="p-4 font-medium">${esc(c.name)}</td><td class="p-4">${esc(c.email)}</td><td class="p-4">${esc(c.phone)}</td><td class="p-4 text-right"><button onclick="openCustomerOrders('${esc(c.email)}')" class="text-brand-sea underline">${c.orders} order${c.orders===1?'':'s'}</button></td></tr>`).join('')}</tbody></table><div class="p-4" id="cust-pager"></div></div>`:'<div class="card p-10 text-center text-gray-500">No customers yet.</div>';
@@ -698,6 +724,7 @@ async function updateOrderStatus(id,status){
         render();
     }catch(e){ console.error('updateOrderStatus failed', e); adminToast((e && e.message) ? ('Could not update order status: ' + e.message) : 'Could not update order status.','error'); }
 }
+function gotoOrderPage(p){orderPage=p;render();}
 function gotoProdPage(p){prodPage=p;render();}
 function gotoCustPage(p){custPage=p;render();}
 let editingId=null;

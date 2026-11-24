@@ -76,8 +76,17 @@ if ($action === 'status' && $method === 'POST') {
     $saved = $check2->fetch();
     wa_json(['ok' => true, 'message' => 'Order status updated.', 'status' => $saved ? $saved['status'] : $status, 'order_id' => $orderId, 'affected' => $affected]);
 }
-if ($action !== 'add' && $action !== 'seen') wa_json(['ok' => false, 'message' => 'Unknown action.'], 400);
+if ($action !== 'add' && $action !== 'seen' && $action !== 'delete') wa_json(['ok' => false, 'message' => 'Unknown action.'], 400);
 if (!wa_valid_csrf($input)) wa_json(['ok' => false, 'message' => 'Invalid security token.'], 403);
+
+if ($action === 'delete') {
+    $orderId = trim((string)($input['order_id'] ?? ''));
+    if ($orderId === '') wa_json(['ok' => false, 'message' => 'Invalid order.'], 422);
+    $stmt = $pdo->prepare('DELETE FROM store_orders WHERE order_id = ?');
+    $stmt->execute([$orderId]);
+    wa_log('api/storage/orders.log', date('c') . " order_deleted admin=" . ($_SESSION['admin_id'] ?? '0') . " order={$orderId}" . PHP_EOL);
+    wa_json(['ok' => true, 'message' => 'Order deleted.']);
+}
 
 if ($action === 'seen') {
     if (empty($_SESSION['admin_id'])) wa_json(['ok' => false, 'message' => 'Admin sign-in required.'], 401);
