@@ -4272,7 +4272,7 @@
             if (!box || !adinkraSymbols.length) return;
             box.innerHTML = adinkraSymbols.map(s => `
                 <button type="button" onclick="selectSymbol(this)" class="symbol-btn w-10 h-10 p-1 flex-shrink-0 bg-white" data-symbol="${escapeHtml(s.name)}" title="${escapeHtml(s.name)}">
-                    <img src="${s.src}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain pointer-events-none">
+                    <span class="relative block w-full h-full pointer-events-none bg-white"><img src="${s.src}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain"><span class="absolute inset-0" style="background:repeating-linear-gradient(180deg,rgba(198,40,40,.4) 0 4px,rgba(245,197,66,.4) 4px 8px,rgba(46,125,50,.4) 8px 12px,rgba(17,17,17,.4) 12px 16px);mix-blend-mode:multiply"></span></span>
                 </button>`).join('');
             const first = box.querySelector('.symbol-btn');
             const nameEl = document.getElementById('selected-symbol-name');
@@ -4321,7 +4321,7 @@
                         <div class="w-56 h-52 flex items-center justify-center p-6 bg-white">
                             <div class="relative w-full h-full">
                                 ${s.custom
-                                    ? '<img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain">'
+                                    ? '<div class="relative w-full h-full bg-white"><img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain"><div class="absolute inset-0 pointer-events-none" style="background:repeating-linear-gradient(180deg,rgba(198,40,40,.35) 0 12px,rgba(245,197,66,.35) 12px 24px,rgba(46,125,50,.35) 24px 36px,rgba(17,17,17,.35) 36px 48px);mix-blend-mode:multiply"></div></div>'
                                     : '<div role="img" aria-label="' + escapeHtml(s.name) + ' Adinkra Symbol" class="absolute inset-0" style="background:repeating-linear-gradient(180deg,#C62828 0 12px,#F5C542 12px 24px,#2E7D32 24px 36px,#111111 36px 48px);-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div><div class="adinkra-hover-black absolute inset-0" style="background:#111111;-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div>'}
                             </div>
                         </div>
