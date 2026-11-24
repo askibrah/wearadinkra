@@ -33,11 +33,11 @@
         aside.collapsed .nav-item { justify-content:center; padding-left:0; padding-right:0; }
         #admin-sidebar > div:first-child { position: relative; }
         #admin-sidebar > div:first-child > button { position:absolute; right:-14px; top:50%; transform:translateY(-50%); z-index:70; box-shadow:0 4px 14px rgba(11,19,43,0.35); }
-        /* Notifications sit at the bottom-right corner of the viewport */
-        #notif-panel { position:fixed !important; right:0; top:89px; bottom:0; width:22rem; max-width:92vw; border-radius:0; border-right:0; display:flex; flex-direction:column; }
+        /* Notifications dropdown attached to the sticky navbar bell */
+        #notif-panel { position:absolute !important; right:0; top:calc(100% + 10px); bottom:auto; width:20rem; max-width:90vw; max-height:50vh; border-radius:0; display:flex; flex-direction:column; }
         #notif-panel.hidden { display:none !important; }
-        #notif-panel > div:first-child { flex-shrink:0; padding-top:10px; padding-bottom:10px; }
-        #notif-list { max-height:none !important; flex:1; height:auto; }
+        #notif-panel > div:first-child { flex-shrink:0; }
+        #notif-list { max-height:calc(50vh - 58px) !important; overflow-y:auto; flex:1 1 auto; }
     </style>
 </head>
 <body class="bg-[#f6f7fb] min-h-screen">
@@ -91,7 +91,7 @@
     </aside>
 
     <main class="flex-1 min-w-0">
-        <header class="bg-white border-b border-gray-200 px-6 py-5 flex justify-between items-center">
+        <header class="bg-white border-b border-gray-200 px-6 py-5 flex justify-between items-center sticky top-0 z-50">
             <div class="flex items-center gap-3">
                 <div class="md:hidden">
                     <button onclick="openMobileSidebar()" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50" aria-label="Open menu"><i class="fa-solid fa-bars"></i></button>
@@ -101,8 +101,8 @@
             <div class="flex items-center gap-3"><span class="text-xs text-gray-500 hidden sm:block" id="admin-email-top"></span>
                 <div class="relative">
                     <button onclick="toggleNotifications()" class="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 relative" title="Notifications"><i class="fa-regular fa-bell"></i><span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">0</span></button>
-                    <div id="notif-panel" class="hidden absolute right-0 top-full w-80 bg-white border border-gray-200 shadow-2xl z-[60]">
-                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center"><p class="text-sm font-bold text-[#0B132B]">Notifications</p><button onclick="markNotificationsSeen()" class="text-xs text-brand-sea">Mark all read</button></div>
+                    <div id="notif-panel" class="hidden bg-white border border-gray-200 shadow-2xl z-[60]">
+                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center"><p class="text-sm font-bold text-[#0B132B]">Notifications <span id="notif-count" class="text-xs font-normal text-gray-400"></span></p><button onclick="markNotificationsSeen()" class="text-xs text-brand-sea">Mark all read</button></div>
                         <div id="notif-list" class="max-h-80 overflow-y-auto"></div>
                     </div>
                 </div>
@@ -938,9 +938,11 @@ async function checkNotifications(){
         const newCount=visibleOrders.filter(o=>Number(o.is_new)===1).length;
         const badge=document.getElementById('notif-badge');
         if(badge){badge.textContent=newCount>9?'9+':newCount;badge.classList.toggle('hidden',newCount===0);}
+        const countEl=document.getElementById('notif-count');
+        if(countEl)countEl.textContent=visibleOrders.length?'('+visibleOrders.length+')':'';
         const list=document.getElementById('notif-list');
         if(list){
-            let html=visibleOrders.length?visibleOrders.slice(0,10).map(o=>`<div data-notif="order:${o.order_id}" class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${Number(o.is_new)?'bg-brand-light/10':''}" onclick="dismissNotification(this,'order:${o.order_id}','orders')"><p class="text-sm font-semibold text-[#0B132B]">New order ${o.order_id}</p><p class="text-xs text-gray-500">${esc(o.customer)} · GH₵ ${Number(o.total).toFixed(2)}</p><p class="text-[10px] text-gray-400 mt-1">${o.created_at}</p></div>`).join(''):'';
+            let html=visibleOrders.length?visibleOrders.slice(0,30).map(o=>`<div data-notif="order:${o.order_id}" class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${Number(o.is_new)?'bg-brand-light/10':''}" onclick="dismissNotification(this,'order:${o.order_id}','orders')"><p class="text-sm font-semibold text-[#0B132B]">New order ${o.order_id}</p><p class="text-xs text-gray-500">${esc(o.customer)} · GH₵ ${Number(o.total).toFixed(2)}</p><p class="text-[10px] text-gray-400 mt-1">${o.created_at}</p></div>`).join(''):'';
             const reviews=JSON.parse(localStorage.getItem('wa_reviews')||'[]');
             if(reviews.length && !read.includes('review'))html+='<div data-notif="review" class="px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50" onclick="dismissNotification(this,\'review\',\'reviews\')"><p class="text-sm font-semibold text-[#0B132B]">New product review</p><p class="text-xs text-gray-500">'+esc(reviews[0].author)+' · '+reviews[0].rating+'★</p></div>';
             list.innerHTML=html||'<p class="px-4 py-6 text-center text-sm text-gray-500">No notifications yet.</p>';
