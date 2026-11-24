@@ -102,12 +102,20 @@ function wa_activate_user(PDO $pdo, int $userId): void
     wa_clear_attempts($pdo, 'user:' . $userId);
 }
 
-function wa_send_otps(PDO $pdo, array $user, string $otp, string $activationToken): void
+function wa_send_otps(PDO $pdo, array $user, string $otp, string $activationToken): bool
 {
-    wa_email_activation($user['email'], $user['name'], $activationToken, $otp);
-    if (!str_starts_with($user['phone'], '+000')) {
-        wa_send_sms($user['phone'], 'Wear Adinkra: Your verification code is ' . $otp . '. Expires in 10 minutes.');
+    $email = trim((string)($user['email'] ?? ''));
+    $mailOk = false;
+    if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $mailOk = wa_email_activation($email, (string)($user['name'] ?? 'Valued Customer'), $activationToken, $otp);
     }
+    if (!$mailOk) {
+        wa_log('api/storage/mail.log', date('c') . " !! ACTIVATION EMAIL FAILED -> {$email}" . PHP_EOL);
+    }
+    if (!str_starts_with((string)($user['phone'] ?? ''), '+000')) {
+        wa_send_sms((string)$user['phone'], 'Wear Adinkra: Your verification code is ' . $otp . '. Expires in 10 minutes.');
+    }
+    return $mailOk;
 }
 
 function wa_normalise_phone(string $phone): string
@@ -171,11 +179,14 @@ switch ($action) {
 
         $otp = wa_generate_otp($pdo, $userId, 'account');
         $token = wa_issue_activation($pdo, $userId);
-        wa_send_otps($pdo, ['email' => $email, 'phone' => $phone, 'name' => $name], $otp, $token);
+        $mailOk = wa_send_otps($pdo, ['email' => $email, 'phone' => $phone, 'name' => $name], $otp, $token);
 
         $response = [
             'ok' => true,
-            'message' => 'Account created. We sent a verification code and an activation link to your email.',
+            'mail_sent' => $mailOk,
+            'message' => $mailOk
+                ? 'Account created. We sent a verification code and an activation link to your email.'
+                : 'Account created, but the email could not be sent. Try resending from the verification panel.',
             'user_id' => $userId,
             'email' => $email,
         ];
@@ -280,8 +291,12 @@ switch ($action) {
         if ($user['status'] === 'active') wa_json(['ok' => true, 'message' => 'Account already active.']);
         $otp = wa_generate_otp($pdo, (int)$user['id'], 'account');
         $token = wa_issue_activation($pdo, (int)$user['id']);
-        wa_send_otps($pdo, $user, $otp, $token);
-        $response = ['ok' => true, 'message' => 'A new code has been sent to your email.'];
+        $mailOk = wa_send_otps($pdo, $user, $otp, $token);
+        $response = [
+            'ok' => true,
+            'mail_sent' => $mailOk,
+            'message' => $mailOk ? 'A new code has been sent to your email.' : 'Could not send the email. Please try again or check your spam folder.',
+        ];
         wa_json($response);
 
     /* ---------- SOCIAL (Google / Facebook) ---------- */
