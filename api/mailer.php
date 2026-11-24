@@ -9,9 +9,41 @@ require_once __DIR__ . '/sms.php'; // wa_log()
  * otherwise falls back to PHP mail(). Every message is logged locally so
  * codes can be verified on a local server without a mail client.
  */
+/**
+ * Resolve the sender address.
+ *
+ * Mail sent from a domain the site does not own fails SPF/DKIM and is dropped
+ * or spam-filtered. If MAIL_FROM names a different domain than APP_URL (a very
+ * easy copy-paste slip between "wearadinkra" and "wearadinkrah"), fall back to
+ * no-reply@<site host> and record why in the mail log.
+ */
+function wa_mail_from(): string
+{
+    $from = defined('MAIL_FROM') ? trim((string) MAIL_FROM) : '';
+
+    $host = strtolower((string) parse_url(APP_URL, PHP_URL_HOST));
+    $host = (string) preg_replace('/^www\./', '', $host);
+
+    // Local development: leave whatever is configured alone.
+    if ($host === '' || $host === 'localhost' || $host === '127.0.0.1') {
+        return $from;
+    }
+
+    $at = strrpos($from, '@');
+    $fromHost = $at === false ? '' : strtolower(substr($from, $at + 1));
+
+    if ($from === '' || $fromHost !== $host) {
+        $fallback = 'no-reply@' . $host;
+        wa_log('api/storage/mail.log', date('c') . " !! MAIL_FROM '{$from}' does not match the site domain; using '{$fallback}'" . PHP_EOL);
+        return $fallback;
+    }
+
+    return $from;
+}
+
 function wa_send_email(string $to, string $subject, string $html): bool
 {
-    $from = MAIL_FROM;
+    $from = wa_mail_from();
     $fromName = MAIL_FROM_NAME;
 
     wa_log('api/storage/mail.log', date('c') . " -> {$to} | {$subject} | " . strip_tags($html) . PHP_EOL);
