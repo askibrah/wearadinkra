@@ -1,0 +1,40 @@
+# ------------------------------------------------------------------
+# Wear Adinkra — Apache hardening for the live site.
+# These rules only affect HTTP requests; PHP includes are unaffected.
+# ------------------------------------------------------------------
+
+# No directory listings
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# Never serve version control data or dotfiles (.git, .gitignore, .env ...)
+RedirectMatch 404 (?i)/\.(git|gitignore|gitattributes|htaccess|env)
+
+# Database dumps, docs, logs and backups must not be downloadable
+<FilesMatch "(?i)\.(sql|md|log|bak|old|ini|dist)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Credentials file is only ever included by PHP, never requested directly
+<Files "config.php">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</Files>
+
+# Belt and braces: block the sql/ directory outright
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^sql/ - [F,L]
+</IfModule>

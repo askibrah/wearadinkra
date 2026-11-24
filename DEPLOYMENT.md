@@ -29,6 +29,7 @@ cp api/config.example.php api/config.php
 | `DEV_MODE` | Keep `false` (never expose OTPs in API responses). |
 | `MAIL_LOG_ONLY` | Keep `false`. Set `true` **only** for local testing with no mail server — emails are then written to `api/storage/mail.log` and reported as sent. |
 | `PAYSTACK_PUBLIC_KEY`, `PAYSTACK_SECRET_KEY` | Replace the test keys with live keys before accepting payments. |
+| `PAYSTACK_CA_BUNDLE` | Leave empty on most hosts. If checkout fails with `SSL certificate problem`, set this to the absolute path of your host's `cacert.pem`. |
 | `SMS_API_KEY`, `SMS_API_URL`, `SMS_SENDER` | Paste your Intek API key. URL/sender defaults are pre-filled. |
 | `SMS_CA_BUNDLE` | Leave empty on most hosts. If SMS fails with `SSL certificate problem`, set this to the absolute path of your host's `cacert.pem`. |
 

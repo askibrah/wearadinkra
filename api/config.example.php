@@ -73,6 +73,8 @@ define('SMTP_SECURE', 'tls');   // 'tls', 'ssl' or 'none'
 define('PAYSTACK_PUBLIC_KEY', '');
 define('PAYSTACK_SECRET_KEY', '');
 define('PAYPAL_FEE_RATE', 0.01); // 1%: 50 GHS = 0.50 GHS, 100 GHS = 1 GHS
+/* Optional: absolute path to cacert.pem if this host cannot verify api.paystack.co over TLS. */
+define('PAYSTACK_CA_BUNDLE', '');
 
 /* ---------------------------------------------------------------
  * Social login — paste your app IDs/secret here later.

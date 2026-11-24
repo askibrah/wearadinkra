@@ -12,12 +12,17 @@ function wa_paystack_request(string $url, array $data = [], string $method = 'PO
     $opts = [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 20,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_HTTPHEADER => [
             'Authorization: Bearer ' . PAYSTACK_SECRET_KEY,
             'Content-Type: application/json',
         ],
     ];
+    /* Some shared hosts ship without a CA bundle; set PAYSTACK_CA_BUNDLE in config.php to a cacert.pem path. */
+    if (defined('PAYSTACK_CA_BUNDLE') && PAYSTACK_CA_BUNDLE !== '') {
+        $opts[CURLOPT_CAINFO] = PAYSTACK_CA_BUNDLE;
+    }
     if ($method === 'POST') { $opts[CURLOPT_POST] = true; $opts[CURLOPT_POSTFIELDS] = json_encode($data); }
     curl_setopt_array($ch, $opts);
     $body = curl_exec($ch);
