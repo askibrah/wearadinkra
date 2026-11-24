@@ -100,11 +100,13 @@ function wa_smtp_send(string $to, string $subject, string $html, string $from, s
     }
     stream_set_timeout($fp, 20);
 
+    // SMTP replies are multiline: "250-..." are continuations, "250 ..." is the end.
+    // Stopping at the first continuation line leaves data in the socket and desyncs STARTTLS.
     $read = static function () use ($fp): string {
         $data = '';
         while (($line = fgets($fp, 4096)) !== false) {
             $data .= $line;
-            if (preg_match('/^\d{3}[\s-]/', $line)) break;
+            if (preg_match('/^\d{3} /', $line)) break;
         }
         return $data;
     };
