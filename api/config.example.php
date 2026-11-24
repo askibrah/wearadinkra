@@ -51,7 +51,7 @@ define('ADMIN_NOTIFY_PHONE', '');
  * PHP mail() is used; mail.log captures everything locally so you
  * can still complete testing before SMTP is configured.
  * --------------------------------------------------------------- */
-define('MAIL_FROM', 'no-reply@wearadinkra.com');
+define('MAIL_FROM', 'no-reply@wearadinkrah.com');
 define('MAIL_FROM_NAME', APP_NAME);
 define('MAIL_LOG', __DIR__ . '/storage/mail.log');
 define('DEV_MODE', false); // Production-safe: never expose OTPs/activation links to the browser. Set true temporarily for local testing.

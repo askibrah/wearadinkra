@@ -26,7 +26,7 @@ cp api/config.example.php api/config.php
 | `APP_URL` | Change to your real site URL, e.g. `https://wearadinkra.com/`. This is used for **activation links, email logo images, shop links and SEO canonical URLs** — leaving it as localhost will break all emailed links. |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Your live MySQL credentials. |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_SECURE` | Fill these to send email over SMTP (recommended). Gmail needs an App Password, port 587, `tls`. Leave `SMTP_HOST` empty to use PHP `mail()` instead. |
-| `MAIL_FROM`, `MAIL_FROM_NAME` | Use an address that exists on your hosting account. |
+| `MAIL_FROM`, `MAIL_FROM_NAME` | Use an address that exists on your hosting account. **The domain must match the live site** (`wearadinkrah.com`) or SPF/DKIM will reject the mail. |
 | `DEV_MODE` | Keep `false` (never expose OTPs in API responses). |
 | `MAIL_LOG_ONLY` | Keep `false`. Set `true` **only** for local testing with no mail server — emails are then written to `api/storage/mail.log` and reported as sent. |
 | `PAYSTACK_PUBLIC_KEY`, `PAYSTACK_SECRET_KEY` | Replace the test keys with live keys before accepting payments. |
@@ -49,7 +49,10 @@ Demo logins (change these immediately after first login):
 
 Change email / phone / password in **Admin → Settings → Account**.
 
-## 6. Test email and SMS
+## 6. SEO base URL
+Open **Admin → Settings → SEO** and set **Base URL** to `https://wearadinkrah.com` (or leave it blank so it falls back to `APP_URL`). Saving regenerates `robots.txt` and `sitemap.xml`. If Base URL still says `localhost`, both files keep advertising `http://localhost/wearadinkra/` to search engines.
+
+## 7. Test email and SMS
 - Preview the exact email designs (no sending): `email-preview.php?kind=activation`, `?kind=otp`, `?kind=promotion`.
 - Send a real test email: call `api/notify.php` with a POST JSON body:
   `{ "action": "test_email", "csrf_token": "<token from api/admin.php?action=csrf>", "to": "you@example.com", "kind": "otp" }`
@@ -57,7 +60,7 @@ Change email / phone / password in **Admin → Settings → Account**.
 - Register a test customer account in the storefront: the activation email must contain the **same OTP** sent by SMS plus the activation link.
 - Every email uses the branded template with the logo, Kente strips and footer. Delivery is logged to `api/storage/mail.log`; SMS to `api/storage/sms.log`.
 
-## 7. Final smoke test
+## 8. Final smoke test
 - Storefront: home/shop/story pages, product detail, cart, checkout, reviews, size guide, Adinkra carousel, search, tracking.
 - Admin: login, products, orders (change an order status → customer gets an email), customers, reviews, promotions (creating one emails all customers), settings, notifications.
 - Check `api/storage/*.log` and your browser console for errors.
