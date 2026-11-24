@@ -174,7 +174,19 @@
                 </div>
                 <div class="card p-6">
                     <h2 class="font-bold text-[#0B132B] mb-4">Existing symbols</h2>
-                    <div id="symbols-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-xs uppercase tracking-wider text-gray-500 border-b border-gray-200">
+                                    <th class="py-3 px-2 w-24">Image</th>
+                                    <th class="py-3 px-2">Name</th>
+                                    <th class="py-3 px-2">Description</th>
+                                    <th class="py-3 px-2 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="symbols-list"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div id="tab-settings" class="tab-panel hidden">
@@ -1075,7 +1087,7 @@ async function renderSymbols() {
         const r = await fetch('api/symbols.php?action=list').then(x => x.json());
         const list = (r && r.symbols) || [];
         window.waSymbols = list;
-        box.innerHTML = list.length ? list.map(s => `<div class="border border-gray-200 p-4"><div class="h-28 flex items-center justify-center bg-gray-50 mb-3"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="max-h-24 max-w-full object-contain"></div><p class="text-sm font-semibold text-brand-dark">${esc(s.name)}</p><p class="text-[11px] text-gray-500 mt-1">${esc(s.description || '')}</p><div class="flex gap-3 mt-3"><button onclick="editSymbol(${s.id})" class="plain-btn text-xs text-brand-sea underline">Edit</button><button onclick="deleteSymbol(${s.id})" class="plain-btn text-xs text-red-600 underline">Delete</button></div></div>`).join('') : '<p class="text-sm text-gray-500 col-span-full">No custom symbols yet.</p>';
+        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-3"><button type="button" onclick="editSymbol(${s.id})" class="plain-btn text-xs text-brand-sea underline">Edit</button><button type="button" onclick="deleteSymbol(${s.id})" class="plain-btn text-xs text-red-600 underline">Delete</button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
     } catch (e) { box.innerHTML = '<p class="text-sm text-red-600">Could not load symbols.</p>'; }
 }
 async function adminTab(name,btn){
