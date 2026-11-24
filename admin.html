@@ -158,7 +158,16 @@
                         <div class="space-y-4">
                             <input id="sym-name" placeholder="Symbol name" class="w-full border border-gray-300 px-4 py-3 text-sm">
                             <textarea id="sym-desc" rows="3" placeholder="Meaning / description" class="w-full border border-gray-300 px-4 py-3 text-sm"></textarea>
-                            <input type="file" id="sym-file" accept="image/*" class="w-full text-xs">
+                            <div id="sym-dropzone" class="border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer hover:border-brand-sea hover:bg-gray-50 transition-colors">
+                                <i class="fa-solid fa-cloud-arrow-up text-2xl text-brand-sea mb-2"></i>
+                                <p class="text-xs text-gray-600">Drag &amp; drop an image here, or <span class="text-brand-sea underline">browse</span></p>
+                                <p class="text-[10px] text-gray-400 mt-1">JPG, PNG, WEBP or GIF — max 8MB</p>
+                                <input type="file" id="sym-file" accept="image/*" class="hidden">
+                            </div>
+                            <div id="sym-progress-wrap" class="hidden mt-3">
+                                <div class="h-1.5 bg-gray-200 overflow-hidden"><div id="sym-progress-bar" class="h-full bg-brand-sea transition-all duration-200" style="width:0%"></div></div>
+                                <p id="sym-progress-text" class="text-[10px] text-gray-500 mt-1">Uploading…</p>
+                            </div>
                             <input id="sym-image" placeholder="Or paste an image URL" class="w-full border border-gray-300 px-4 py-3 text-sm">
                             <div class="flex gap-3">
                                 <button type="button" onclick="saveSymbol()" id="sym-save" class="bg-brand-dark text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Add symbol</button>
@@ -448,6 +457,7 @@ function pager(id,page,pages,onclick){let h='<div class="flex justify-end items-
 async function boot(){
     document.getElementById('admin-loader').classList.remove('hidden');
     document.getElementById('admin-loader').classList.add('flex');
+    initSymbolDropzone();
     const me=await api('me');
     if(!me.user){location.href='admin-login.html';return;}
     try{const r=await fetch('api/products.php?action=list').then(x=>x.json());products=(r.ok&&r.products)?r.products:await fetch('products.json').then(x=>x.json());}catch(e){products=[];}
@@ -1025,15 +1035,60 @@ function updateSymPreview() {
     if (url) { img.src = url; img.classList.remove('hidden'); if (empty) empty.classList.add('hidden'); }
     else { img.src = ''; img.classList.add('hidden'); if (empty) empty.classList.remove('hidden'); }
 }
-async function uploadSymbolImage(file) {
-    const fd = new FormData();
-    fd.append('image', file);
-    const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);
-    fd.append('csrf_token', csrf || '');
-    const r = await fetch('api/upload.php', { method: 'POST', body: fd }).then(x => x.json()).catch(() => ({ ok: false }));
-    if (!r.ok) throw new Error(r.message || 'Image upload failed.');
-    return r.path;
-}
+    function showLocalPreview(file) {
+        const img = document.getElementById('sym-preview');
+        const empty = document.getElementById('sym-preview-empty');
+        if (!img || !file) return;
+        img.src = URL.createObjectURL(file);
+        img.classList.remove('hidden');
+        if (empty) empty.classList.add('hidden');
+    }
+    function initSymbolDropzone() {
+        const dz = document.getElementById('sym-dropzone');
+        const input = document.getElementById('sym-file');
+        if (!dz || !input) return;
+        dz.addEventListener('click', () => input.click());
+        ['dragenter', 'dragover'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); e.stopPropagation();
+            dz.classList.add('border-brand-sea', 'bg-gray-50');
+        }));
+        ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, e => {
+            e.preventDefault(); e.stopPropagation();
+            dz.classList.remove('border-brand-sea', 'bg-gray-50');
+        }));
+        dz.addEventListener('drop', e => {
+            const f = e.dataTransfer.files[0];
+            if (f) { input.files = e.dataTransfer.files; showLocalPreview(f); }
+        });
+        input.addEventListener('change', () => { const f = input.files[0]; if (f) showLocalPreview(f); });
+    }
+    function setUploadProgress(pct) {
+        const bar = document.getElementById('sym-progress-bar');
+        const text = document.getElementById('sym-progress-text');
+        if (bar) bar.style.width = pct + '%';
+        if (text) text.textContent = pct < 100 ? 'Uploading… ' + pct + '%' : 'Upload complete.';
+    }
+    function uploadSymbolImage(file) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);
+                const fd = new FormData();
+                fd.append('image', file);
+                fd.append('csrf_token', csrf || '');
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'api/upload.php');
+                xhr.upload.onprogress = e => { if (e.lengthComputable) setUploadProgress(Math.round(e.loaded / e.total * 100)); };
+                xhr.onload = () => {
+                    try {
+                        const j = JSON.parse(xhr.responseText);
+                        if (j.ok) resolve(j.path); else reject(new Error(j.message || 'Image upload failed.'));
+                    } catch (err) { reject(new Error('Image upload failed.')); }
+                };
+                xhr.onerror = () => reject(new Error('Network error during upload.'));
+                xhr.send(fd);
+            } catch (e) { reject(e); }
+        });
+    }
 async function saveSymbol() {
     const name = document.getElementById('sym-name').value.trim();
     const description = document.getElementById('sym-desc').value.trim();
@@ -1041,6 +1096,8 @@ async function saveSymbol() {
     let image = document.getElementById('sym-image').value.trim();
     const btn = document.getElementById('sym-save');
     if (!name) { symMessage('Enter a symbol name.', false); return; }
+    const progressWrap = document.getElementById('sym-progress-wrap');
+    if (file && progressWrap) { progressWrap.classList.remove('hidden'); setUploadProgress(0); }
     btn.disabled = true;
     try {
         if (file) {
@@ -1053,12 +1110,17 @@ async function saveSymbol() {
         symMessage(res.message || 'Saved.', !!res.ok);
         if (res.ok) { resetSymbolForm(); await renderSymbols(); }
     } catch (e) { symMessage(e.message || 'Could not save symbol.', false); }
-    finally { btn.disabled = false; }
+    finally {
+        btn.disabled = false;
+        if (file) setTimeout(() => document.getElementById('sym-progress-wrap').classList.add('hidden'), 800);
+    }
 }
 function resetSymbolForm() {
     symbolEditId = 0;
     ['sym-name', 'sym-desc', 'sym-image'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const f = document.getElementById('sym-file'); if (f) f.value = '';
+    document.getElementById('sym-progress-wrap').classList.add('hidden');
+    setUploadProgress(0);
     document.getElementById('sym-save').textContent = 'Add symbol';
     updateSymPreview();
     symMessage('', true);
@@ -1087,7 +1149,7 @@ async function renderSymbols() {
         const r = await fetch('api/symbols.php?action=list').then(x => x.json());
         const list = (r && r.symbols) || [];
         window.waSymbols = list;
-        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-3"><button type="button" onclick="editSymbol(${s.id})" class="plain-btn text-xs text-brand-sea underline">Edit</button><button type="button" onclick="deleteSymbol(${s.id})" class="plain-btn text-xs text-red-600 underline">Delete</button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
+        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-2"><button type="button" onclick="editSymbol(${s.id})" title="Edit" aria-label="Edit ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="deleteSymbol(${s.id})" title="Delete" aria-label="Delete ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"><i class="fa-solid fa-trash text-xs"></i></button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
     } catch (e) { box.innerHTML = '<p class="text-sm text-red-600">Could not load symbols.</p>'; }
 }
 async function adminTab(name,btn){

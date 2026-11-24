@@ -1013,6 +1013,7 @@
                 <div id="explore-symbol" class="absolute top-0 left-0 right-0 h-[calc(100%-9rem)] w-full p-10 pointer-events-none select-none" aria-hidden="true"></div>
                 <div class="absolute bottom-0 left-0 right-0 z-10 bg-white/95 px-6 py-5 text-center shadow-[0_-8px_24px_rgba(255,255,255,0.9)]">
                     <p id="explore-symbol-name" class="text-[15px] uppercase tracking-[0.2em] text-[#0B132B] font-semibold mb-1 sm:mb-2 pointer-events-none select-none"></p>
+                    <p id="explore-symbol-desc" class="text-xs text-gray-600 mb-2 sm:mb-3 leading-relaxed pointer-events-none select-none"></p>
                     <span class="block text-sm tracking-[0.3em] uppercase text-brand-dark mb-1.5 sm:mb-3">Adinkra Symbols</span>
                     <h2 class="dark-gradient-text font-serif text-3xl lg:text-4xl my-1.5 sm:my-3">Shop wearadinkra</h2>
                     <p class="text-gray-700 text-base mb-2 sm:mb-4">Symbols that speak. Styles that last.</p>
@@ -2934,15 +2935,20 @@
             });
         }
 
+        let lastExploreIndex = -1;
         function randomizeExploreSymbol() {
             const el = document.getElementById('explore-symbol');
             if (!el || !adinkraSymbols.length) return;
-            const s = adinkraSymbols[Math.floor(Math.random() * adinkraSymbols.length)];
-            const mask = `-webkit-mask-image:url('${s.src}');mask-image:url('${s.src}');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)`;
-            el.innerHTML = `<div class="w-full h-full transition-opacity duration-500" style="background:repeating-linear-gradient(180deg,#C62828 0 14px,#F5C542 14px 28px,#2E7D32 28px 42px,#111111 42px 56px);${mask}"></div>`;
+            let i = Math.floor(Math.random() * adinkraSymbols.length);
+            if (adinkraSymbols.length > 1 && i === lastExploreIndex) i = (i + 1) % adinkraSymbols.length;
+            lastExploreIndex = i;
+            const s = adinkraSymbols[i];
+            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full object-contain"></div>';
             el.setAttribute('aria-label', s.name + ' Adinkra symbol');
             const nameEl = document.getElementById('explore-symbol-name');
             if (nameEl) nameEl.textContent = s.name;
+            const descEl = document.getElementById('explore-symbol-desc');
+            if (descEl) descEl.textContent = s.meaning || '';
         }
 
         // Only one hero product image flips at a time, and at a relaxed pace.
@@ -4688,6 +4694,7 @@
             startCollectionFlash();
             buildCategoryMegaMenu();
             await loadCustomSymbols();
+            randomizeExploreSymbol();
             renderAdinkraCarousel();
             renderSymbolOptions();
             initFilterCategoryCounts();
