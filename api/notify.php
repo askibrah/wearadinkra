@@ -10,6 +10,13 @@ if (!wa_valid_csrf($input)) {
 
 $action = (string)($input['action'] ?? '');
 
+/* Every action in this file sends email on the site's behalf, so it must be
+   admin-only. The CSRF check above is not enough on its own: any visitor can
+   request a token from api/auth.php?action=csrf. */
+if (empty($_SESSION['admin_id'])) {
+    wa_json(['ok' => false, 'message' => 'Admin sign-in required.'], 401);
+}
+
 if ($action === 'promotion_notify') {
     $type = trim((string)($input['type'] ?? 'Promotion'));
     $productName = trim((string)($input['productName'] ?? 'All products'));
