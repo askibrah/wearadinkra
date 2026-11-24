@@ -843,6 +843,9 @@
                 <span id="auth-toggle-text">Don't have an account?</span>
                 <button onclick="toggleAuthMode()" class="plain-btn text-brand-sea underline hover:text-brand-dark ml-1" id="auth-toggle-btn">Sign up</button>
             </p>
+            <p class="text-center mt-2">
+                <button id="forgot-toggle" onclick="toggleForgot()" class="plain-btn text-xs text-brand-sea underline hover:text-brand-dark">Forgot password?</button>
+            </p>
             <p id="forgot-signin" class="hidden text-center mt-4">
                 <button onclick="toggleForgot()" class="plain-btn text-sm font-medium text-brand-sea underline hover:text-brand-dark">← Back to Sign In</button>
             </p>
@@ -1900,13 +1903,23 @@
         const USD_RATE = 0.065; // fallback rate
         let usdRate = USD_RATE;
 
-        // --- SOCIAL AUTH CONFIG (add your live IDs/links here) ---
+        // --- SOCIAL AUTH CONFIG (public client IDs come from api/social.php) ---
         const WA_SOCIAL = {
             googleClientId: '',   // Google OAuth Client ID
             facebookAppId: '',    // Facebook App ID
             googleLink: '',       // Optional: direct Google sign-in link/redirect URL
             facebookLink: ''      // Optional: direct Facebook sign-in link/redirect URL
         };
+        async function loadSocialConfig() {
+            try {
+                const r = await fetch('api/social.php', { cache: 'no-store' }).then(x => x.json());
+                if (r && r.ok) {
+                    WA_SOCIAL.googleClientId = r.googleClientId || '';
+                    WA_SOCIAL.facebookAppId = r.facebookAppId || '';
+                }
+            } catch (e) { /* social sign-in stays unavailable */ }
+            initSocialAuth();
+        }
         function initSocialAuth() {
             if (WA_SOCIAL.googleClientId && !document.getElementById('google-gis-sdk')) {
                 const s = document.createElement('script');
@@ -3197,7 +3210,12 @@
                 return;
             }
 
-            if (provider === 'google' && WA_SOCIAL.googleClientId && window.google && google.accounts && google.accounts.id) {
+            if (provider === 'google' && WA_SOCIAL.googleClientId) {
+                if (!window.google || !google.accounts || !google.accounts.id) {
+                    initSocialAuth();
+                    authMessage('Google sign-in is loading — please try again in a moment.', false);
+                    return;
+                }
                 google.accounts.id.initialize({
                     client_id: WA_SOCIAL.googleClientId,
                     callback: async (resp) => {
@@ -3212,7 +3230,12 @@
                 return;
             }
 
-            if (provider === 'facebook' && WA_SOCIAL.facebookAppId && window.FB) {
+            if (provider === 'facebook' && WA_SOCIAL.facebookAppId) {
+                if (!window.FB) {
+                    initSocialAuth();
+                    authMessage('Facebook sign-in is loading — please try again in a moment.', false);
+                    return;
+                }
                 FB.login(async (resp) => {
                     if (!resp.authResponse || !resp.authResponse.accessToken) { authMessage('Facebook sign-in was cancelled.', true); return; }
                     const result = await waApi('social', { provider: 'facebook', token: resp.authResponse.accessToken });
@@ -4594,7 +4617,7 @@
             loadUsdRate();
             await loadStoreProducts();
             handleProductDeepLink();
-            initSocialAuth();
+            await loadSocialConfig();
             checkSession();
             showPromoModal();
 
