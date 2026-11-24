@@ -1150,10 +1150,46 @@ async function renderSymbols() {
         const r = await fetch('api/symbols.php?action=list').then(x => x.json());
         const list = (r && r.symbols) || [];
         window.waSymbols = list;
-        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-2"><button type="button" onclick="editSymbol(${s.id})" title="Edit" aria-label="Edit ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="deleteSymbol(${s.id})" title="Delete" aria-label="Delete ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"><i class="fa-solid fa-trash text-xs"></i></button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
+        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-2"><button type="button" onclick="editSymbol(${s.id})" title="Edit" aria-label="Edit ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="deleteSymbol(${s.id})" title="Delete" aria-label="Delete ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"><i class="fa-solid fa-trash text-xs"></i></button><button type="button" onclick="downloadSymbolPng(${s.id})" title="Download PNG" aria-label="Download ${esc(s.name)} as PNG" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-download text-xs"></i></button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
     } catch (e) { box.innerHTML = '<p class="text-sm text-red-600">Could not load symbols.</p>'; }
 }
-async function adminTab(name,btn){
+    function downloadSymbolPng(id) {
+        const s = (window.waSymbols || []).find(x => x.id === id);
+        if (!s) return;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const px = frame.data;
+            const colors = [[198, 40, 40], [245, 197, 66], [46, 125, 50], [17, 17, 17]];
+            for (let y = 0; y < canvas.height; y++) {
+                const band = colors[Math.floor(y / 12) % 4];
+                for (let x = 0; x < canvas.width; x++) {
+                    const i = (y * canvas.width + x) * 4;
+                    const lum = (px[i] + px[i + 1] + px[i + 2]) / 3;
+                    if (lum < 110 && px[i + 3] > 0) {
+                        px[i] = band[0]; px[i + 1] = band[1]; px[i + 2] = band[2]; px[i + 3] = 255;
+                    }
+                }
+            }
+            ctx.putImageData(frame, 0, 0);
+            const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png');
+            a.download = String(s.name || 'adinkra-symbol').replace(/[^a-z0-9_-]+/gi, '-') + '.png';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            adminToast(s.name + ' downloaded as PNG with Kente stripes.');
+        };
+        img.onerror = () => adminToast('Could not load the symbol image.');
+        img.src = s.image;
+    }
+    async function adminTab(name,btn){
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.add('hidden'));
     document.getElementById('tab-'+name).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(n=>{
