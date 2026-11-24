@@ -1474,12 +1474,12 @@
                         <div>
                             <h2 class="font-medium text-brand-dark mb-4">Shipping details</h2>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <input type="text" id="co-first" placeholder="First name" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                                <input type="text" id="co-last" placeholder="Last name" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                                <input type="email" id="co-email" placeholder="Email" class="sm:col-span-2 border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                                <input type="text" id="co-address" placeholder="Address" class="sm:col-span-2 border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                                <input type="text" id="co-city" placeholder="City" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
-                                <input type="text" id="co-phone" placeholder="Phone" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="text" id="co-first" required placeholder="First name" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="text" id="co-last" required placeholder="Last name" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="email" id="co-email" required placeholder="Email" class="sm:col-span-2 border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="text" id="co-address" required placeholder="Address" class="sm:col-span-2 border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="text" id="co-city" required placeholder="City" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
+                                <input type="text" id="co-phone" required placeholder="Phone" class="border border-gray-300 py-3 px-4 rounded focus:outline-none focus:border-brand-sea">
                             </div>
                         </div>
 
@@ -1512,10 +1512,6 @@
                                 </label>
                             </div>
                         </div>
-
-                        <button id="place-order-btn" onclick="placeOrder()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-4 rounded hover:bg-brand-dark transition-colors">
-                            Place Order
-                        </button>
                     </div>
 
                     <!-- Right: Order Summary -->
@@ -1529,6 +1525,13 @@
                             <span>Total</span>
                             <span id="checkout-total">GH₵ 0.00 ($0.00)</span>
                         </div>
+                    </div>
+
+                    <!-- Place order sits after the summary on mobile, full width on desktop -->
+                    <div class="lg:col-span-2">
+                        <button id="place-order-btn" onclick="placeOrder()" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase py-4 rounded hover:bg-brand-dark transition-colors">
+                            Place Order
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2361,6 +2364,13 @@
             const checked = document.querySelector('input[name="payment"]:checked');
             const method = checked ? checked.value : 'paystack';
             if (!cart.length) { alert('Your cart is empty.'); return; }
+            const fieldVal = id => (document.getElementById(id)?.value || '').trim();
+            const requiredFields = [['co-first', 'first name'], ['co-last', 'last name'], ['co-email', 'email address'], ['co-address', 'delivery address'], ['co-city', 'city'], ['co-phone', 'phone number']];
+            for (const [id, label] of requiredFields) {
+                if (!fieldVal(id)) { alert('Please fill in your ' + label + ' before placing the order.'); document.getElementById(id)?.focus(); return; }
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fieldVal('co-email'))) { alert('Please enter a valid email address.'); document.getElementById('co-email')?.focus(); return; }
+            if (fieldVal('co-phone').replace(/\D/g, '').length < 7) { alert('Please enter a valid phone number.'); document.getElementById('co-phone')?.focus(); return; }
             const missingKid = cart.find(i => /kid|child|baby|children/i.test(String(i.category||'')) && (!(i.kidAge||'').trim() || !(i.kidHeight||'').trim() || !(i.kidSex||'').trim()));
             if (missingKid) { alert('Please provide child age, height and sex for kids items before checkout.'); openProduct(missingKid.id); return; }
             const totals = orderTotals();
@@ -3544,6 +3554,23 @@
                 if(box && box.dataset.statusValue !== j.status){ box.dataset.statusValue=j.status; toggleOrderProgress(orderId,true); }
             }).catch(()=>{});
         }
+        function toggleOrderDetails(orderId) {
+            const box = document.getElementById('details-' + orderId);
+            if (!box) return;
+            if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+            const order = (JSON.parse(getStored('wa_orders') || '[]')).find(o => o.id === orderId);
+            if (!order) return;
+            const c = order.customer || {};
+            const line = (label, value) => '<p class="py-1"><span class="text-gray-500">' + label + ':</span> ' + escapeHtml(value || '—') + '</p>';
+            const items = (order.items || []).map(i => {
+                const extra = [i.symbol ? 'Symbol: ' + i.symbol : '', i.size ? 'Size: ' + i.size : '', i.color ? 'Color: ' + i.color : ''].filter(Boolean).join(' · ');
+                return '<div class="py-2 border-b border-gray-100 last:border-0"><span class="text-brand-dark">' + escapeHtml(i.name || 'Item') + ' × ' + (i.quantity || 1) + '</span>' + (extra ? '<p class="text-xs text-gray-500 mt-1">' + escapeHtml(extra) + '</p>' : '') + '</div>';
+            }).join('');
+            box.innerHTML = '<p class="font-semibold text-brand-dark mb-2">Customer details</p>'
+                + line('Name', c.name) + line('Email', c.email) + line('Phone', c.phone) + line('Address', c.address)
+                + '<p class="font-semibold text-brand-dark mt-4 mb-2">Items ordered</p>' + (items || '<p class="text-gray-500">No item details.</p>');
+            box.classList.remove('hidden');
+        }
         function toggleOrderProgress(orderId, force) {
             const box = document.getElementById('progress-' + orderId);
             if (!box) return;
@@ -3698,7 +3725,7 @@
                         (detail ? '<p class="text-[11px] text-gray-500 mt-1 leading-relaxed">' + escapeHtml(detail) + '</p>' : '') + '</div>' +
                         '<span class="text-sm text-brand-dark shrink-0">' + formatPrice((i.price || 0) * (i.quantity || 1)) + '</span></div>';
                 }).join('');
-                return '<div class="bg-white border border-gray-200 p-6"><div class="flex flex-wrap justify-between items-center gap-3 mb-4"><div><p class="font-medium text-brand-dark">' + o.id + '</p><p class="text-xs text-gray-500">' + o.date + ' · ' + (o.method || '').toUpperCase() + '</p></div>' + '<span id="order-status-' + o.id + '" class="px-3 py-1 bg-green-100 text-green-700 text-xs uppercase tracking-wider">' + (STATUS_LABELS[o.status] || 'Processing') + '</span></div>' + items + '<div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-200"><span class="font-medium text-brand-dark">' + formatPrice(o.total) + '</span><button onclick="toggleOrderProgress(\'' + o.id + '\')" class="plain-btn text-brand-dark hover:text-brand-sea text-sm underline">Track order</button></div><div id="progress-' + o.id + '" class="hidden mt-6 pt-5 border-t border-gray-100"></div></div>';
+                return '<div class="bg-white border border-gray-200 p-6"><div class="flex flex-wrap justify-between items-center gap-3 mb-4"><div><p class="font-medium text-brand-dark">' + o.id + '</p><p class="text-xs text-gray-500">' + o.date + ' · ' + (o.method || '').toUpperCase() + '</p></div>' + '<span id="order-status-' + o.id + '" class="px-3 py-1 bg-green-100 text-green-700 text-xs uppercase tracking-wider">' + (STATUS_LABELS[o.status] || 'Processing') + '</span></div>' + items + '<div class="flex flex-wrap justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-200"><span class="font-medium text-brand-dark">' + formatPrice(o.total) + '</span><div class="flex items-center gap-4"><button onclick="toggleOrderProgress(\'' + o.id + '\')" class="plain-btn text-brand-dark hover:text-brand-sea text-sm underline">Track order</button><button type="button" onclick="toggleOrderDetails(\'' + o.id + '\')" class="plain-btn text-brand-sea hover:text-brand-dark text-sm underline">Order details</button></div></div><div id="progress-' + o.id + '" class="hidden mt-6 pt-5 border-t border-gray-100"></div><div id="details-' + o.id + '" class="hidden mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600"></div></div>';
             }).join('');
             el.querySelectorAll('.order-item-img').forEach(img => {
                 img.addEventListener('click', () => openImageLightbox(img.dataset.full, img.dataset.cap));
