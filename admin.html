@@ -1171,10 +1171,10 @@ async function renderSymbols() {
                 const band = colors[Math.floor(y / 12) % 4];
                 for (let x = 0; x < canvas.width; x++) {
                     const i = (y * canvas.width + x) * 4;
+                    if (px[i + 3] === 0) continue;
                     const lum = (px[i] + px[i + 1] + px[i + 2]) / 3;
-                    if (lum < 110 && px[i + 3] > 0) {
-                        px[i] = band[0]; px[i + 1] = band[1]; px[i + 2] = band[2]; px[i + 3] = 255;
-                    }
+                    const alpha = lum < 110 ? 255 : lum < 140 ? Math.round(255 * (140 - lum) / 30) : 0;
+                    px[i] = band[0]; px[i + 1] = band[1]; px[i + 2] = band[2]; px[i + 3] = alpha;
                 }
             }
             ctx.putImageData(frame, 0, 0);
