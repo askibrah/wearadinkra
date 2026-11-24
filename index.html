@@ -4272,7 +4272,7 @@
             if (!box || !adinkraSymbols.length) return;
             box.innerHTML = adinkraSymbols.map(s => `
                 <button type="button" onclick="selectSymbol(this)" class="symbol-btn w-10 h-10 p-1 flex-shrink-0 bg-white" data-symbol="${escapeHtml(s.name)}" title="${escapeHtml(s.name)}">
-                    <span class="block w-full h-full pointer-events-none" style="background:repeating-linear-gradient(180deg,#C62828 0 4px,#F5C542 4px 8px,#2E7D32 8px 12px,#111111 12px 16px)"><img src="${s.src}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain" style="mix-blend-mode:multiply"></span>
+                    <img src="${s.src}" alt="${escapeHtml(s.name)}" class="w-full h-full object-contain pointer-events-none">
                 </button>`).join('');
             const first = box.querySelector('.symbol-btn');
             const nameEl = document.getElementById('selected-symbol-name');
@@ -4317,11 +4317,11 @@
             const kenteStrip = '<div class="flex w-full h-1.5 mt-auto"><span style="background:#C62828" class="flex-1"></span><span style="background:#F5C542" class="flex-1"></span><span style="background:#2E7D32" class="flex-1"></span><span style="background:#111111" class="flex-1"></span></div>';
             track.innerHTML = adinkraSymbols.map(s => `
                 <div class="snap-center flex-shrink-0 w-56 flex flex-col items-center">
-                    <button type="button" onclick="showAdinkraDetail('${escapeHtml(s.name).replace(/'/g, "\\'")}')" class="adinkra-tile w-56 bg-transparent hover:bg-transparent rounded-2xl shadow-lg flex flex-col items-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-gray-100 hover:border-brand-sea/30" title="${escapeHtml(s.name)}">
-                        <div class="w-56 h-52 flex items-center justify-center p-4 bg-transparent">
+                    <button type="button" onclick="showAdinkraDetail('${escapeHtml(s.name).replace(/'/g, "\\'")}')" class="adinkra-tile w-56 bg-white hover:bg-white rounded-2xl shadow-lg flex flex-col items-center overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl border border-gray-100 hover:border-brand-sea/30" title="${escapeHtml(s.name)}">
+                        <div class="w-56 h-52 flex items-center justify-center p-6 bg-white">
                             <div class="relative w-full h-full">
                                 ${s.custom
-                                    ? '<div class="w-full h-full" style="background:repeating-linear-gradient(180deg,#C62828 0 12px,#F5C542 12px 24px,#2E7D32 24px 36px,#111111 36px 48px)"><img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain" style="mix-blend-mode:multiply"></div>'
+                                    ? '<img src="' + s.src + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain">'
                                     : '<div role="img" aria-label="' + escapeHtml(s.name) + ' Adinkra Symbol" class="absolute inset-0" style="background:repeating-linear-gradient(180deg,#C62828 0 12px,#F5C542 12px 24px,#2E7D32 24px 36px,#111111 36px 48px);-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div><div class="adinkra-hover-black absolute inset-0" style="background:#111111;-webkit-mask-image:url(\'' + s.src + '\');mask-image:url(\'' + s.src + '\');-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;-webkit-backface-visibility:hidden;backface-visibility:hidden;transform:translateZ(0)"></div>'}
                             </div>
                         </div>
