@@ -1919,7 +1919,6 @@
     </footer>
 
     <!-- JAVASCRIPT LOGIC -->
-    <script src="assets/js/adinkra-symbols.js?v=3"></script>
     <script src="assets/js/receipt-image.js"></script>
     <script>
         // --- CURRENCY ---
@@ -4194,26 +4193,29 @@
         }
 
         // --- ADINKRA CAROUSEL ---
-        const adinkraSymbols = (window.ADINKRA_SYMBOLS || []).map(s => ({
-            no: s.no, name: s.name, meaning: s.meaning, src: s.img, img: s.img
-        }));
-        const adinkraMeanings = Object.fromEntries(adinkraSymbols.map(s => [s.name, s.meaning]));
+        // Only symbols added by the admin are shown; the old bundled list is retired.
+        const adinkraSymbols = [];
+        const adinkraMeanings = {};
         async function loadCustomSymbols() {
             try {
                 const r = await fetch('api/symbols.php?action=list', { cache: 'no-store' }).then(x => x.json());
                 if (!r.ok || !Array.isArray(r.symbols)) return;
+                adinkraSymbols.length = 0;
+                Object.keys(adinkraMeanings).forEach(k => delete adinkraMeanings[k]);
                 r.symbols.forEach(s => {
-                    if (!s || !s.name || !s.image || adinkraSymbols.some(x => x.name === s.name)) return;
-                    const item = {
+                    if (!s || !s.name || !s.image) return;
+                    const meaning = s.description || 'A timeless Ghanaian symbol with a story to tell.';
+                    adinkraSymbols.push({
                         no: adinkraSymbols.length + 1,
                         name: s.name,
-                        meaning: s.description || 'A timeless Ghanaian symbol with a story to tell.',
-                        src: s.image, img: s.image, custom: true
-                    };
-                    adinkraSymbols.push(item);
-                    adinkraMeanings[item.name] = item.meaning;
+                        meaning: meaning,
+                        src: s.image,
+                        img: s.image,
+                        custom: true
+                    });
+                    adinkraMeanings[s.name] = meaning;
                 });
-            } catch (e) { /* keep the built-in symbols */ }
+            } catch (e) { /* no custom symbols available yet */ }
         }
         function showSymbolMeaning(name) {
             const el = document.getElementById('symbol-meaning');
@@ -4302,6 +4304,11 @@
             const track = document.getElementById('adinkra-track');
             const dots = document.getElementById('adinkra-dots');
             if (!track || !dots) return;
+            if (!adinkraSymbols.length) {
+                track.innerHTML = '<p class="w-full py-12 text-center text-sm text-gray-500">No Adinkra symbols have been added yet.</p>';
+                dots.innerHTML = '';
+                return;
+            }
             const kenteStrip = '<div class="flex w-full h-1.5 mt-auto"><span style="background:#C62828" class="flex-1"></span><span style="background:#F5C542" class="flex-1"></span><span style="background:#2E7D32" class="flex-1"></span><span style="background:#111111" class="flex-1"></span></div>';
             track.innerHTML = adinkraSymbols.map(s => `
                 <div class="snap-center flex-shrink-0 w-56 flex flex-col items-center">
