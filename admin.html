@@ -158,6 +158,16 @@
                 <form onsubmit="saveSettings(event)" class="space-y-6">
                     <div id="set-pane-seo" class="settings-pane space-y-6">
                         <div class="card p-6">
+                            <div class="flex flex-wrap items-center justify-between gap-4">
+                                <div>
+                                    <h2 class="font-bold text-[#0B132B]">SEO settings</h2>
+                                    <p class="text-xs text-gray-500 mt-1">Saving rewrites robots.txt and sitemap.xml.</p>
+                                </div>
+                                <button type="submit" class="bg-brand-dark text-white px-6 py-3 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Save settings</button>
+                            </div>
+                            <p id="seo-save-msg" class="hidden text-xs text-green-700 mt-3"></p>
+                        </div>
+                        <div class="card p-6">
                             <h2 class="font-bold text-[#0B132B] mb-1">Is the site being indexed?</h2>
                             <p class="text-xs text-gray-500 mb-5">The master switches. Everything below is written into the page head and the robots file.</p>
                             <div class="space-y-3 text-sm">
@@ -853,6 +863,8 @@ async function saveSettings(e){
     seoSettings=result.settings||payload;
     playSuccessSound();adminToast(result.ok?result.message:'Settings saved on this device.');
     const m=document.getElementById('settings-msg');m.classList.remove('hidden');m.textContent=result.ok?result.message:'Saved locally.';setTimeout(()=>m.classList.add('hidden'),3000);
+    const sm=document.getElementById('seo-save-msg');
+    if(sm){sm.classList.remove('hidden');sm.className='text-xs mt-3 '+(result.ok?'text-green-700':'text-red-600');sm.textContent=result.ok?result.message:'Saved on this device only.';setTimeout(()=>sm.classList.add('hidden'),3000);}
 }
 function readNotifKeys(){try{return JSON.parse(localStorage.getItem('wa_read_notifs')||'[]');}catch(e){return [];}}
 function saveReadNotif(key){const keys=readNotifKeys();if(!keys.includes(key)){keys.push(key);localStorage.setItem('wa_read_notifs',JSON.stringify(keys));}}
