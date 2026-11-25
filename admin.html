@@ -414,7 +414,7 @@
                 <label class="flex items-center gap-2 text-xs text-gray-600"><input type="checkbox" id="np-unlimited" class="accent-brand-sea"> Always available</label>
             </div>
             <select id="np-category" class="w-full border border-gray-300 px-4 py-3 text-sm">
-                <option value="All">All Product</option><option>African Shirt</option><option>Kowa African Wear</option><option>Kimono Outfits</option><option>T-shirts</option><option>Kowa Outfit</option>
+                <option value="All">All Category</option><option>African Shirt</option><option>Kowa African Wear</option><option>Kimono Outfits</option><option>T-shirts</option><option>Kowa Outfit</option>
             </select>
             <div class="flex gap-2">
                 <input id="np-category-new" placeholder="Or type a new category" class="flex-1 border border-gray-300 px-4 py-3 text-sm">
@@ -789,26 +789,28 @@ function gotoOrderPage(p){orderPage=p;render();}
 function gotoProdPage(p){prodPage=p;render();}
 function gotoCustPage(p){custPage=p;render();}
 let editingId=null;
+    const BUILTIN_CATEGORIES = ['African Shirt', 'Kowa African Wear', 'Kimono Outfits', 'T-shirts', 'Kowa Outfit'];
     let customCategories = [];
     async function loadCategories() {
         try {
             const r = await fetch('api/categories.php?action=list').then(x => x.json());
-            if (!r.ok) return;
-            customCategories = (r.categories || []).map(c => ({ id: c.id, name: c.name }));
-            const names = customCategories.map(c => c.name.toLowerCase());
-            const sel = document.getElementById('np-category');
-            if (!sel) return;
-            const current = sel.value;
-            [...sel.options].forEach(o => { if (!names.includes(o.value.toLowerCase())) o.remove(); });
-            customCategories.forEach(c => {
-                if (![...sel.options].some(o => o.value.toLowerCase() === c.name.toLowerCase())) {
-                    const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; sel.appendChild(o);
-                }
-            });
-            if ([...sel.options].some(o => o.value === current)) sel.value = current;
-        } catch (e) { /* keep the built-in options */ }
+            if (r.ok && Array.isArray(r.categories)) customCategories = r.categories.map(c => ({ id: c.id, name: c.name }));
+        } catch (e) { customCategories = []; }
+        const sel = document.getElementById('np-category');
+        if (!sel) return;
+        const current = sel.value;
+        sel.innerHTML = '';
+        sel.appendChild(new Option('All Category', 'All'));
+        BUILTIN_CATEGORIES.forEach(c => sel.appendChild(new Option(c, c)));
+        customCategories.forEach(c => {
+            if (!BUILTIN_CATEGORIES.some(b => b.toLowerCase() === c.name.toLowerCase())) {
+                const o = new Option(c.name, c.name); o.dataset.custom = '1'; sel.appendChild(o);
+            }
+        });
+        sel.value = (current && current !== 'All' && [...sel.options].some(o => o.value === current)) ? current : 'All';
     }
     async function addCategory(name) {
+        if (name.toLowerCase() === 'all') return { ok: false, message: 'All Category is reserved and cannot be replaced.' };
         const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);
         const res = await fetch('api/categories.php', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -818,7 +820,7 @@ let editingId=null;
             if (!customCategories.some(c => c.name.toLowerCase() === name.toLowerCase())) customCategories.push({ id: res.id || 0, name });
             const sel = document.getElementById('np-category');
             if (sel && ![...sel.options].some(o => o.value.toLowerCase() === name.toLowerCase())) {
-                const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+                const o = new Option(name, name); o.dataset.custom = '1'; sel.appendChild(o);
             }
         }
         return res;
@@ -828,7 +830,7 @@ let editingId=null;
         const name = document.getElementById('np-category').value.trim();
         const found = customCategories.find(c => c.name.toLowerCase() === name.toLowerCase());
         const msg = document.getElementById('add-product-msg');
-        if (!found) { if (msg) { msg.classList.remove('hidden'); msg.textContent = 'Built-in categories cannot be deleted. Select a category you added.'; } return; }
+        if (name.toLowerCase() === 'all' || !found) { if (msg) { msg.classList.remove('hidden'); msg.textContent = name.toLowerCase() === 'all' ? 'All Category is the default and cannot be deleted.' : 'Built-in categories cannot be deleted. Select a category you added.'; } return; }
         pendingDeleteCategory = found;
         document.getElementById('delete-category-name').textContent = found.name;
         const m = document.getElementById('delete-category-modal');
