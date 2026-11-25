@@ -373,6 +373,20 @@
     </main>
 </div>
 
+<!-- Delete order confirmation -->
+<div id="delete-order-modal" class="hidden fixed inset-0 bg-black/60 z-[95] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm p-7 text-center">
+        <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500 mb-4"></i>
+        <h2 class="font-bold text-lg text-brand-dark mb-2">Delete this order?</h2>
+        <p class="text-sm text-gray-600 mb-1">Order <b id="delete-order-id"></b> will be permanently removed.</p>
+        <p class="text-xs text-gray-400 mb-6">This cannot be undone.</p>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeDeleteOrder()" class="flex-1 border border-gray-300 px-4 py-3 text-xs uppercase tracking-widest hover:bg-gray-50">Keep order</button>
+            <button type="button" onclick="confirmDeleteOrder()" class="flex-1 bg-red-600 text-white px-4 py-3 text-xs uppercase tracking-widest hover:bg-red-700">Delete order</button>
+        </div>
+    </div>
+</div>
+
 <!-- Add product modal -->
 <div id="add-product-modal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm sm:max-w-md max-h-[82vh] flex flex-col overflow-hidden">
@@ -574,8 +588,36 @@ function startTopProductsRotation(){
     if(topProductsList.length<=5)return;
     topProductsTimer=setInterval(()=>{topProductsPage++;renderTopProductsPage();},30000);
 }
+    let pendingDeleteOrder = '';
+    function askDeleteOrder(id) {
+        pendingDeleteOrder = id;
+        document.getElementById('delete-order-id').textContent = id;
+        const m = document.getElementById('delete-order-modal');
+        m.classList.remove('hidden'); m.classList.add('flex');
+    }
+    function closeDeleteOrder() {
+        pendingDeleteOrder = '';
+        const m = document.getElementById('delete-order-modal');
+        m.classList.add('hidden'); m.classList.remove('flex');
+    }
+    async function confirmDeleteOrder() {
+        const id = pendingDeleteOrder;
+        closeDeleteOrder();
+        if (id) await deleteAdminOrder(id);
+    }
+    function toggleOrderCustomer(id) {
+        const box = document.getElementById('cust-' + id);
+        if (!box) return;
+        if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+        const o = (JSON.parse(localStorage.getItem('wa_orders') || '[]')).find(x => x.id === id);
+        if (!o) return;
+        const c = o.customer || {};
+        const line = (label, value) => '<p class="py-1"><span class="text-gray-500">' + label + ':</span> ' + esc(value || '—') + '</p>';
+        box.innerHTML = line('Name', c.name) + line('Email', c.email) + line('Phone', c.phone)
+            + line('Address', c.address) + line('City', c.city) + line('Account', o.guest ? 'Guest' : 'Registered');
+        box.classList.remove('hidden');
+    }
     async function deleteAdminOrder(id){
-        if(!confirm('Delete order '+id+'?'))return;
         try{
             const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(x=>x.csrf_token).catch(()=>null);
             const res=await fetch('api/orders.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'delete',csrf_token:csrf,order_id:id})}).then(r=>r.json());
@@ -632,7 +674,7 @@ function render(){
     pager('prod-pager',prodPage,pp.pages,'gotoProdPage');
 
     const op=paginate(orders,orderPage,6);
-    document.getElementById('tab-orders').innerHTML=orders.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Image</th><th class="p-4 text-left">Order</th><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Date</th><th class="p-4 text-right">Total</th><th class="p-4 text-left">Status</th></tr></thead><tbody>${op.rows.map(o=>`<tr class="border-t border-gray-100"><td class="p-4"><button onclick="openAdminOrderImage('${o.id}')" class="w-10 h-12 p-0 border-0 bg-transparent cursor-pointer"><img src="${orderImage(o)}" class="w-10 h-12 object-contain bg-gray-50 border border-gray-200" alt="Order image"></button></td><td class="p-4 font-semibold">${o.id}<div class="text-[11px] text-gray-500 font-normal mt-1 space-y-0.5">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${i.symbol?` · ${esc(i.symbol)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')}</div></td><td class="p-4">${esc(o.customer?o.customer.name:'—')}<span class="block text-xs text-gray-500">${esc(o.customer?o.customer.email:'')}</span><span class="block text-xs text-gray-500">${esc(o.customer&&o.customer.phone?o.customer.phone:'—')}</span><span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 ${o.guest?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700'}">${o.guest?'Guest':'Account'}</span></td><td class="p-4 text-xs">${o.date}</td><td class="p-4 text-right font-semibold">${money(o.total)}</td><td class="p-4"><select onchange="updateOrderStatus('${o.id}',this.value)" class="border border-gray-300 px-2 py-1 text-xs"><option value="processing" ${o.status==='processing'?'selected':''}>Processing</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="in_transit" ${o.status==='in_transit'?'selected':''}>In transit</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option></select></td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No orders yet.</div>';
+    document.getElementById('tab-orders').innerHTML=orders.length?`<div class="card overflow-hidden"><table class="w-full text-sm"><thead class="bg-brand-dark text-xs uppercase text-white"><tr><th class="p-4 text-left">Image</th><th class="p-4 text-left">Order</th><th class="p-4 text-left">Customer</th><th class="p-4 text-left">Date</th><th class="p-4 text-right">Total</th><th class="p-4 text-left">Status</th></tr></thead><tbody>${op.rows.map(o=>`<tr class="border-t border-gray-100"><td class="p-4"><button onclick="openAdminOrderImage('${o.id}')" class="w-10 h-12 p-0 border-0 bg-transparent cursor-pointer"><img src="${orderImage(o)}" class="w-10 h-12 object-contain bg-gray-50 border border-gray-200" alt="Order image"></button></td><td class="p-4 font-semibold">${o.id}<div class="text-[11px] text-gray-500 font-normal mt-1 space-y-0.5">${(o.items||[]).map(i=>`<div>${esc(i.name||'Item')} × ${i.quantity||1}${i.size?` · ${esc(i.size)}`:''}${i.color?` · ${esc(i.color)}`:''}${i.symbol?` · ${esc(i.symbol)}`:''}${(i.kidAge||i.kidHeight||i.kidSex)?` · Child: ${esc(i.kidAge||'—')}${i.kidHeight?' / '+esc(i.kidHeight):''}${i.kidSex?' / '+esc(i.kidSex):''}`:''}</div>`).join('')}</div></td><td class="p-4"><div class="flex items-start justify-between gap-2"><div>${esc(o.customer?o.customer.name:'—')}<span class="block text-xs text-gray-500">${esc(o.customer?o.customer.email:'')}</span><span class="block text-xs text-gray-500">${esc(o.customer&&o.customer.phone?o.customer.phone:'—')}</span><span class="inline-block mt-1 text-[9px] px-1.5 py-0.5 ${o.guest?'bg-amber-100 text-amber-700':'bg-green-100 text-green-700'}">${o.guest?'Guest':'Account'}</span></div><button type="button" onclick="toggleOrderCustomer('${o.id}')" class="plain-btn text-brand-sea shrink-0" title="Customer details" aria-label="Show customer details"><i class="fa-solid fa-chevron-down text-xs"></i></button></div><div id="cust-${o.id}" class="hidden mt-3 pt-3 border-t border-gray-100 text-xs text-gray-600"></div></td><td class="p-4 text-xs">${o.date}</td><td class="p-4 text-right font-semibold">${money(o.total)}</td><td class="p-4"><select onchange="updateOrderStatus('${o.id}',this.value)" class="border border-gray-300 px-2 py-1 text-xs"><option value="processing" ${o.status==='processing'?'selected':''}>Processing</option><option value="shipped" ${o.status==='shipped'?'selected':''}>Shipped</option><option value="in_transit" ${o.status==='in_transit'?'selected':''}>In transit</option><option value="delivered" ${o.status==='delivered'?'selected':''}>Delivered</option></select></td></tr>`).join('')}</tbody></table></div>`:'<div class="card p-10 text-center text-gray-500">No orders yet.</div>';
 
     if(orders.length){
         const host=document.getElementById('tab-orders');
@@ -643,9 +685,10 @@ function render(){
         host.querySelectorAll('tbody tr').forEach((tr,i)=>{
             const id=op.rows[i].id;
             const btn=document.createElement('button');
-            btn.type='button'; btn.textContent='Delete';
-            btn.className='plain-btn text-red-600 text-xs underline block mt-2';
-            btn.onclick=()=>deleteAdminOrder(id);
+            btn.type='button'; btn.innerHTML='<i class="fa-solid fa-trash text-xs"></i>';
+            btn.title='Delete order'; btn.setAttribute('aria-label','Delete order '+id);
+            btn.className='plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors mt-2';
+            btn.onclick=()=>askDeleteOrder(id);
             tr.lastElementChild.appendChild(btn);
         });
     }
