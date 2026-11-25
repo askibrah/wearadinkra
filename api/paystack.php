@@ -44,8 +44,12 @@ if ($action === 'initialize') {
         wa_json(['ok' => false, 'message' => 'Invalid payment details.'], 422);
     }
     $callback = APP_URL . 'paystack-callback.html';
+    // Paystack shows this address in its popup. Keep the brand there instead of the shopper's email.
+    $displayEmail = defined('PAYSTACK_DISPLAY_EMAIL') && filter_var(PAYSTACK_DISPLAY_EMAIL, FILTER_VALIDATE_EMAIL)
+        ? (string)PAYSTACK_DISPLAY_EMAIL
+        : $email;
     [$code, $res] = wa_paystack_request('https://api.paystack.co/transaction/initialize', [
-        'email' => $email,
+        'email' => $displayEmail,
         'amount' => round($amount * 100),
         'reference' => $reference,
         'currency' => 'GHS',
