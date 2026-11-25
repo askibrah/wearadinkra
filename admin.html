@@ -403,7 +403,10 @@
             <select id="np-category" class="w-full border border-gray-300 px-4 py-3 text-sm">
                 <option value="All">All Product</option><option>African Shirt</option><option>Kowa African Wear</option><option>Kimono Outfits</option><option>T-shirts</option><option>Kowa Outfit</option>
             </select>
-            <input id="np-category-new" placeholder="Or type a new category" class="w-full border border-gray-300 px-4 py-3 text-sm">
+            <div class="flex gap-2">
+                <input id="np-category-new" placeholder="Or type a new category" class="flex-1 border border-gray-300 px-4 py-3 text-sm">
+                <button type="button" onclick="addCategoryStandalone()" class="shrink-0 bg-brand-dark text-white px-4 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Add category</button>
+            </div>
             <div id="np-dropzone" class="border-2 border-dashed border-brand-light p-6 text-center cursor-pointer hover:bg-brand-light/10">
                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-sea"></i>
                 <p class="text-sm text-brand-dark mt-2">Drag &amp; drop product images here</p>
@@ -474,6 +477,7 @@ async function boot(){
     initSymbolDropzone();
     const me=await api('me');
     if(!me.user){location.href='admin-login.html';return;}
+    await loadCategories();
     try{const r=await fetch('api/products.php?action=list').then(x=>x.json());products=(r.ok&&r.products)?r.products:await fetch('products.json').then(x=>x.json());}catch(e){products=[];}
     try{
         const r=await fetch('api/orders.php?action=list').then(x=>x.json());
@@ -771,6 +775,48 @@ function gotoOrderPage(p){orderPage=p;render();}
 function gotoProdPage(p){prodPage=p;render();}
 function gotoCustPage(p){custPage=p;render();}
 let editingId=null;
+    let customCategories = [];
+    async function loadCategories() {
+        try {
+            const r = await fetch('api/categories.php?action=list').then(x => x.json());
+            if (!r.ok) return;
+            customCategories = (r.categories || []).map(c => c.name);
+            const sel = document.getElementById('np-category');
+            if (!sel) return;
+            const current = sel.value;
+            [...sel.options].forEach(o => { if (!customCategories.some(c => c.toLowerCase() === o.value.toLowerCase())) o.remove(); });
+            customCategories.forEach(c => {
+                if (![...sel.options].some(o => o.value.toLowerCase() === c.toLowerCase())) {
+                    const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+                }
+            });
+            if ([...sel.options].some(o => o.value === current)) sel.value = current;
+        } catch (e) { /* keep the built-in options */ }
+    }
+    async function addCategory(name) {
+        const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);
+        const res = await fetch('api/categories.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add', csrf_token: csrf, name })
+        }).then(r => r.json()).catch(() => ({ ok: false, message: 'Network error.' }));
+        if (res.ok) {
+            if (!customCategories.some(c => c.toLowerCase() === name.toLowerCase())) customCategories.push(name);
+            const sel = document.getElementById('np-category');
+            if (sel && ![...sel.options].some(o => o.value.toLowerCase() === name.toLowerCase())) {
+                const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
+            }
+        }
+        return res;
+    }
+    async function addCategoryStandalone() {
+        const input = document.getElementById('np-category-new');
+        const name = input.value.trim();
+        const msg = document.getElementById('add-product-msg');
+        if (!name) { if (msg) { msg.classList.remove('hidden'); msg.textContent = 'Enter a category name.'; } return; }
+        const res = await addCategory(name);
+        if (res.ok) { input.value = ''; adminToast(res.message || 'Category added.'); }
+        else if (msg) { msg.classList.remove('hidden'); msg.textContent = res.message || 'Could not add category.'; }
+    }
 function openAddProduct(id){
     const box=document.getElementById('add-product-modal');
     box.classList.remove('hidden');box.classList.add('flex');
@@ -906,6 +952,7 @@ async function saveProduct(e){
     if(uploadPending>0){document.getElementById('add-product-msg').textContent='Images are still processing. Please wait.';return;}
     const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(r=>r.csrf_token).catch(()=>null);
     const catVal=(document.getElementById('np-category-new').value.trim()||document.getElementById('np-category').value);
+    if(catVal && !customCategories.some(c=>c.toLowerCase()===catVal.toLowerCase())) await addCategory(catVal);
     const result=await fetch('api/products.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         action:editingId?'update':'add',id:editingId,csrf_token:csrf,name,price,
         description:document.getElementById('np-description').value.trim(),
@@ -916,9 +963,6 @@ async function saveProduct(e){
         video:document.getElementById('np-video').value.trim()
     })}).then(r=>r.json()).catch(()=>({ok:false,message:'Network error.'}));
     if(!result.ok){document.getElementById('add-product-msg').textContent=result.message;return;}
-    if(catVal && ![...document.getElementById('np-category').options].some(o=>o.value===catVal || o.textContent===catVal)){
-        const opt=document.createElement('option'); opt.value=catVal; opt.textContent=catVal; document.getElementById('np-category').appendChild(opt);
-    }
     products=result.products||products;
     editingId=null;
     uploadImages=[];uploadPending=0;renderUploadPreviews();updateUploadProgress();prodPage=1;

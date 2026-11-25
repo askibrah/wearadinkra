@@ -4147,10 +4147,18 @@
         }
 
         // --- CATEGORY MEGA MENU ---
+        let customCategories = [];
+        async function loadCategories() {
+            try {
+                const r = await fetch('api/categories.php?action=list', { cache: 'no-store' }).then(x => x.json());
+                if (r.ok && Array.isArray(r.categories)) customCategories = r.categories.map(c => c.name).filter(Boolean);
+            } catch (e) { /* keep the built-in list */ }
+        }
         function getAppCategories(includeAll=true){
             const defaults=["African Shirt","Kowa African Wear","Kimono Outfits","T-shirts","Kowa Outfit"];
             const fromProducts=[...new Set((products||[]).map(p=>String(p.category||'').trim()).filter(c=>c && c.toLowerCase()!=='all' && c.toLowerCase()!=='all product'))];
             const cats=[...defaults];
+            customCategories.forEach(c=>{ if(!cats.some(x=>x.toLowerCase()===c.toLowerCase())) cats.push(c); });
             fromProducts.forEach(c=>{ if(!cats.some(x=>x.toLowerCase()===c.toLowerCase())) cats.push(c); });
             return includeAll ? ['All',...cats] : cats;
         }
@@ -4779,6 +4787,7 @@
             randomizeExploreSymbol();
             setInterval(randomizeExploreSymbol, 5000);
             startCollectionFlash();
+            await loadCategories();
             buildCategoryMegaMenu();
             await loadCustomSymbols();
             randomizeExploreSymbol();
