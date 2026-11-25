@@ -182,7 +182,7 @@
                     </div>
                 </div>
                 <div class="card p-6">
-                    <h2 class="font-bold text-[#0B132B] mb-4">Existing symbols</h2>
+                    <h2 class="font-bold text-[#0B132B] mb-4">Existing symbols <span id="sym-total" class="text-xs font-normal text-gray-400"></span></h2>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
@@ -373,6 +373,19 @@
     </main>
 </div>
 
+<!-- Delete category confirmation -->
+<div id="delete-category-modal" class="hidden fixed inset-0 bg-black/60 z-[95] items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm p-7 text-center">
+        <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500 mb-4"></i>
+        <h2 class="font-bold text-lg text-brand-dark mb-2">Delete this category?</h2>
+        <p class="text-sm text-gray-600 mb-6">Category <b id="delete-category-name"></b> will be removed. Products already using it keep their category.</p>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeDeleteCategory()" class="flex-1 border border-gray-300 px-4 py-3 text-xs uppercase tracking-widest hover:bg-gray-50">Keep category</button>
+            <button type="button" onclick="confirmDeleteCategory()" class="flex-1 bg-red-600 text-white px-4 py-3 text-xs uppercase tracking-widest hover:bg-red-700">Delete category</button>
+        </div>
+    </div>
+</div>
+
 <!-- Delete order confirmation -->
 <div id="delete-order-modal" class="hidden fixed inset-0 bg-black/60 z-[95] items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm p-7 text-center">
@@ -406,6 +419,7 @@
             <div class="flex gap-2">
                 <input id="np-category-new" placeholder="Or type a new category" class="flex-1 border border-gray-300 px-4 py-3 text-sm">
                 <button type="button" onclick="addCategoryStandalone()" class="shrink-0 bg-brand-dark text-white px-4 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Add category</button>
+                <button type="button" onclick="deleteSelectedCategory()" class="shrink-0 border border-red-300 text-red-600 px-4 text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">Delete</button>
             </div>
             <div id="np-dropzone" class="border-2 border-dashed border-brand-light p-6 text-center cursor-pointer hover:bg-brand-light/10">
                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-sea"></i>
@@ -780,14 +794,15 @@ let editingId=null;
         try {
             const r = await fetch('api/categories.php?action=list').then(x => x.json());
             if (!r.ok) return;
-            customCategories = (r.categories || []).map(c => c.name);
+            customCategories = (r.categories || []).map(c => ({ id: c.id, name: c.name }));
+            const names = customCategories.map(c => c.name.toLowerCase());
             const sel = document.getElementById('np-category');
             if (!sel) return;
             const current = sel.value;
-            [...sel.options].forEach(o => { if (!customCategories.some(c => c.toLowerCase() === o.value.toLowerCase())) o.remove(); });
+            [...sel.options].forEach(o => { if (!names.includes(o.value.toLowerCase())) o.remove(); });
             customCategories.forEach(c => {
-                if (![...sel.options].some(o => o.value.toLowerCase() === c.toLowerCase())) {
-                    const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o);
+                if (![...sel.options].some(o => o.value.toLowerCase() === c.name.toLowerCase())) {
+                    const o = document.createElement('option'); o.value = c.name; o.textContent = c.name; sel.appendChild(o);
                 }
             });
             if ([...sel.options].some(o => o.value === current)) sel.value = current;
@@ -800,13 +815,46 @@ let editingId=null;
             body: JSON.stringify({ action: 'add', csrf_token: csrf, name })
         }).then(r => r.json()).catch(() => ({ ok: false, message: 'Network error.' }));
         if (res.ok) {
-            if (!customCategories.some(c => c.toLowerCase() === name.toLowerCase())) customCategories.push(name);
+            if (!customCategories.some(c => c.name.toLowerCase() === name.toLowerCase())) customCategories.push({ id: res.id || 0, name });
             const sel = document.getElementById('np-category');
             if (sel && ![...sel.options].some(o => o.value.toLowerCase() === name.toLowerCase())) {
                 const o = document.createElement('option'); o.value = name; o.textContent = name; sel.appendChild(o);
             }
         }
         return res;
+    }
+    let pendingDeleteCategory = '';
+    function deleteSelectedCategory() {
+        const name = document.getElementById('np-category').value.trim();
+        const found = customCategories.find(c => c.name.toLowerCase() === name.toLowerCase());
+        const msg = document.getElementById('add-product-msg');
+        if (!found) { if (msg) { msg.classList.remove('hidden'); msg.textContent = 'Built-in categories cannot be deleted. Select a category you added.'; } return; }
+        pendingDeleteCategory = found;
+        document.getElementById('delete-category-name').textContent = found.name;
+        const m = document.getElementById('delete-category-modal');
+        m.classList.remove('hidden'); m.classList.add('flex');
+    }
+    function closeDeleteCategory() {
+        pendingDeleteCategory = '';
+        const m = document.getElementById('delete-category-modal');
+        m.classList.add('hidden'); m.classList.remove('flex');
+    }
+    async function confirmDeleteCategory() {
+        const cat = pendingDeleteCategory;
+        closeDeleteCategory();
+        if (!cat) return;
+        const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);
+        const res = await fetch('api/categories.php', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', csrf_token: csrf, id: cat.id })
+        }).then(r => r.json()).catch(() => ({ ok: false, message: 'Network error.' }));
+        adminToast(res.message || (res.ok ? 'Category deleted.' : 'Could not delete category.'));
+        if (res.ok) {
+            customCategories = customCategories.filter(c => c.id !== cat.id);
+            const sel = document.getElementById('np-category');
+            const opt = sel && [...sel.options].find(o => o.value.toLowerCase() === cat.name.toLowerCase());
+            if (opt) opt.remove();
+        }
     }
     async function addCategoryStandalone() {
         const input = document.getElementById('np-category-new');
@@ -952,7 +1000,7 @@ async function saveProduct(e){
     if(uploadPending>0){document.getElementById('add-product-msg').textContent='Images are still processing. Please wait.';return;}
     const csrf=await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(r=>r.csrf_token).catch(()=>null);
     const catVal=(document.getElementById('np-category-new').value.trim()||document.getElementById('np-category').value);
-    if(catVal && !customCategories.some(c=>c.toLowerCase()===catVal.toLowerCase())) await addCategory(catVal);
+    if(catVal && !customCategories.some(c=>c.name.toLowerCase()===catVal.toLowerCase())) await addCategory(catVal);
     const result=await fetch('api/products.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         action:editingId?'update':'add',id:editingId,csrf_token:csrf,name,price,
         description:document.getElementById('np-description').value.trim(),
@@ -1128,6 +1176,8 @@ async function renderVisits(){
     if(list){const vp=paginate(visits,visitPage,6);list.innerHTML=vp.rows.length?vp.rows.map(v=>`<tr class="border-t border-gray-100"><td class="p-4 text-xs">${esc(v.created_at)}</td><td class="p-4">${esc(v.city||'—')}</td><td class="p-4">${esc(v.country||'Unknown')}</td><td class="p-4 text-brand-sea">${esc(v.source||'Direct')}</td><td class="p-4 text-xs">${esc(v.page||'/')}</td><td class="p-4">${esc(v.device||'—')}</td></tr>`).join(''):'<tr><td colspan="6" class="p-8 text-center text-gray-500">No visitors yet.</td></tr>';pager('visits-pager',visitPage,vp.pages,'gotoVisitPage');}
 }
 function gotoVisitPage(p){visitPage=p;renderVisits();}
+let symPage = 1;
+function gotoSymPage(p) { symPage = p; renderSymbols(); }
 let symbolEditId = 0;
 async function symbolApi(action, data = {}) {
     try {
@@ -1266,7 +1316,15 @@ async function renderSymbols() {
         const r = await fetch('api/symbols.php?action=list').then(x => x.json());
         const list = (r && r.symbols) || [];
         window.waSymbols = list;
-        box.innerHTML = list.length ? list.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-2"><button type="button" onclick="editSymbol(${s.id})" title="Edit" aria-label="Edit ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="deleteSymbol(${s.id})" title="Delete" aria-label="Delete ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"><i class="fa-solid fa-trash text-xs"></i></button><button type="button" onclick="downloadSymbolPng(${s.id})" title="Download PNG" aria-label="Download ${esc(s.name)} as PNG" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-download text-xs"></i></button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
+        const sp = paginate(list, symPage, 4);
+        const totalEl = document.getElementById('sym-total');
+        if (totalEl) totalEl.textContent = list.length ? '(' + list.length + ' total)' : '';
+        box.innerHTML = sp.rows.length ? sp.rows.map(s => `<tr class="border-b border-gray-100 last:border-0"><td class="py-3 px-2"><img src="${esc(s.image)}" alt="${esc(s.name)}" class="w-12 h-12 object-contain bg-gray-50 border border-gray-200"></td><td class="py-3 px-2 font-medium text-brand-dark">${esc(s.name)}</td><td class="py-3 px-2 text-gray-600">${esc(s.description || '—')}</td><td class="py-3 px-2"><div class="flex justify-end gap-2"><button type="button" onclick="editSymbol(${s.id})" title="Edit" aria-label="Edit ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-pen text-xs"></i></button><button type="button" onclick="deleteSymbol(${s.id})" title="Delete" aria-label="Delete ${esc(s.name)}" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-red-600 hover:bg-red-600 hover:text-white transition-colors"><i class="fa-solid fa-trash text-xs"></i></button><button type="button" onclick="downloadSymbolPng(${s.id})" title="Download PNG" aria-label="Download ${esc(s.name)} as PNG" class="plain-btn w-8 h-8 flex items-center justify-center border border-gray-200 text-brand-sea hover:bg-brand-sea hover:text-white transition-colors"><i class="fa-solid fa-download text-xs"></i></button></div></td></tr>`).join('') : '<tr><td colspan="4" class="py-8 text-center text-gray-500">No custom symbols yet.</td></tr>';
+        const pagerBox = document.getElementById('sym-pager') || (() => {
+            const d = document.createElement('div'); d.id = 'sym-pager'; d.className = 'p-4';
+            box.parentElement.appendChild(d); return d;
+        })();
+        pager('sym-pager', symPage, sp.pages, 'gotoSymPage');
     } catch (e) { box.innerHTML = '<p class="text-sm text-red-600">Could not load symbols.</p>'; }
 }
     function downloadSymbolPng(id) {
