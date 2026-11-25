@@ -44,17 +44,18 @@ if ($action === 'initialize') {
         wa_json(['ok' => false, 'message' => 'Invalid payment details.'], 422);
     }
     $callback = APP_URL . 'paystack-callback.html';
-    // Paystack shows this address in its popup. Keep the brand there instead of the shopper's email.
-    $displayEmail = defined('PAYSTACK_DISPLAY_EMAIL') && filter_var(PAYSTACK_DISPLAY_EMAIL, FILTER_VALIDATE_EMAIL)
-        ? (string)PAYSTACK_DISPLAY_EMAIL
-        : $email;
+    // Paystack requires the customer's real email: it is both the checkout identity
+    // and the address for Paystack's receipt. The brand name is shown via a custom field.
     [$code, $res] = wa_paystack_request('https://api.paystack.co/transaction/initialize', [
-        'email' => $displayEmail,
+        'email' => $email,
         'amount' => round($amount * 100),
         'reference' => $reference,
         'currency' => 'GHS',
         'callback_url' => $callback,
-        'metadata' => ['custom_fields' => [['display_name' => 'Name', 'variable_name' => 'name', 'value' => $name]]],
+        'metadata' => ['custom_fields' => [
+            ['display_name' => 'wearadinkra', 'variable_name' => 'wearadinkra', 'value' => 'wearadinkra'],
+            ['display_name' => 'Name', 'variable_name' => 'name', 'value' => $name],
+        ]],
     ]);
     if ($code >= 200 && $code < 300 && !empty($res['status']) && !empty($res['data']['authorization_url'])) {
         wa_json(['ok' => true, 'authorization_url' => $res['data']['authorization_url'], 'reference' => $res['data']['reference'] ?? $reference]);

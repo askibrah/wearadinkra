@@ -82,8 +82,7 @@ define('PAYSTACK_SECRET_KEY', '');
 define('PAYPAL_FEE_RATE', 0.01); // 1%: 50 GHS = 0.50 GHS, 100 GHS = 1 GHS
 /* Optional: absolute path to cacert.pem if this host cannot verify api.paystack.co over TLS. */
 define('PAYSTACK_CA_BUNDLE', '');
-/* Address shown in the Paystack popup instead of the shopper's email. */
-define('PAYSTACK_DISPLAY_EMAIL', 'wearadinkra@wearadinkrah.com');
+
 
 /* ---------------------------------------------------------------
  * Social login — paste your app IDs/secret here later.
