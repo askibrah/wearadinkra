@@ -1240,7 +1240,7 @@ async function renderSymbols() {
             const px = frame.data;
             const colors = [[198, 40, 40], [245, 197, 66], [46, 125, 50], [17, 17, 17]];
             for (let y = 0; y < canvas.height; y++) {
-                const band = colors[Math.floor(y / 12) % 4];
+                const band = colors[Math.floor(y / 24) % 4];
                 for (let x = 0; x < canvas.width; x++) {
                     const i = (y * canvas.width + x) * 4;
                     if (px[i + 3] === 0) continue;
