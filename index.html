@@ -4252,7 +4252,7 @@
 
         // --- ADINKRA CAROUSEL ---
         const waStripedCache = new Map();
-        function waStripedSrc(src, band = 24) {
+        function waStripedSrc(src, band = 120) {
             if (!src) return Promise.resolve(src);
             if (waStripedCache.has(src)) return waStripedCache.get(src);
             const task = new Promise(resolve => {
@@ -4310,7 +4310,7 @@
                     });
                     adinkraMeanings[s.name] = meaning;
                 });
-                await Promise.all(adinkraSymbols.map(async s => { s.displaySrc = await waStripedSrc(s.src, 24); }));
+                await Promise.all(adinkraSymbols.map(async s => { s.displaySrc = await waStripedSrc(s.src, 120); }));
             } catch (e) { /* no custom symbols available yet */ }
         }
         function showSymbolMeaning(name) {
