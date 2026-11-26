@@ -429,6 +429,7 @@
                     <button type="button" onclick="saveCategorySizes()" class="bg-brand-dark text-white px-4 py-2 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Save sizes</button>
                     <span id="cat-sizes-msg" class="text-[10px] text-gray-500"></span>
                 </div>
+                <p id="np-sizes-preview" class="text-[11px] text-brand-sea mt-3"></p>
             </div>
             <div id="np-dropzone" class="border-2 border-dashed border-brand-light p-6 text-center cursor-pointer hover:bg-brand-light/10">
                 <i class="fa-solid fa-cloud-arrow-up text-3xl text-brand-sea"></i>
@@ -852,6 +853,14 @@ let editingId=null;
         const cat = customCategories.find(c => c.name === name);
         applyCategorySizes(cat && cat.sizes);
         const msg = document.getElementById('cat-sizes-msg'); if (msg) msg.textContent = '';
+        const preview = document.getElementById('np-sizes-preview');
+        if (preview) {
+            if (name === 'All' || !cat) { preview.textContent = ''; }
+            else {
+                const parts = ['adult','girls','boys'].filter(g => (cat.sizes && cat.sizes[g] || []).length).map(g => g + ': ' + cat.sizes[g].join(', '));
+                preview.textContent = parts.length ? 'Applies to this category — ' + parts.join(' · ') : 'No sizes set — all standard sizes will show.';
+            }
+        }
     }
     async function categoryApi(action, data = {}) {
         const csrf = await fetch('api/admin.php?action=csrf').then(r => r.json()).then(x => x.csrf_token).catch(() => null);

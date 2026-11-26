@@ -1342,7 +1342,7 @@
                         <p id="product-price" class="text-2xl text-gray-700 mb-6"></p>
                         
                         <div class="mb-6">
-                            <h3 class="text-sm font-medium text-gray-900 mb-3">Colour</h3>
+                            <h3 class="text-sm font-medium text-gray-900 mb-3">Pick your prefered colour</h3>
                             <div class="flex flex-wrap items-center gap-3" id="color-options">
                                 <button onclick="selectColor(this)" title="Black" class="color-btn w-8 h-8 rounded-full border-2 border-gray-400 focus:outline-none" style="background:#111111" data-color="Black"></button>
                                 <button onclick="selectColor(this)" title="Yellow" class="color-btn w-8 h-8 rounded-full border-2 border-gray-400 focus:outline-none" style="background:#F5C542" data-color="Yellow"></button>
@@ -2305,7 +2305,8 @@
         let products = [];
 
         // --- CART STATE ---
-        let cart = [];
+        let cart = (() => { try { const saved = JSON.parse(getStored('wa_cart') || '[]'); return Array.isArray(saved) ? saved : []; } catch (e) { return []; } })();
+        function saveCart() { try { setStored('wa_cart', JSON.stringify(cart)); } catch (e) { /* storage full */ } }
         let currentProductId = null; // Tracks product currently open in detail view
 
         // --- PAGE ROUTING LOGIC ---
@@ -2530,6 +2531,7 @@
             });
 
             cart = [];
+            saveCart();
             updateCartCount();
             renderCart();
             showPage('success');
@@ -2855,7 +2857,7 @@
                 });
             } catch (e) { /* audio not available */ }
         }
-        function clearCart(){cart=[];updateCartCount();renderCart();}
+        function clearCart(){cart=[];saveCart();updateCartCount();renderCart();}
         function addToCart(productId, quantity = 1) {
             const product = products.find(p => p.id === productId);
             if (!product || (product.stock || 0) <= 0) return;
@@ -2879,7 +2881,7 @@
             } else {
                 cart.push({ ...product, quantity: quantity, symbol, color, size, kidAge, kidHeight, kidSex });
             }
-
+            saveCart();
             updateCartCount();
             playTone([523.25, 783.99]);
             toggleCart(); // Open cart to show feedback
@@ -2900,6 +2902,7 @@
 
         function removeFromCart(productId) {
             cart = cart.filter(item => item.id !== productId);
+            saveCart();
             updateCartCount();
             renderCart();
         }
@@ -2912,6 +2915,7 @@
                 if (item.quantity <= 0) {
                     removeFromCart(productId);
                 } else {
+                    saveCart();
                     updateCartCount();
                     renderCart();
                     const q = document.querySelector('[data-cart-qty="' + productId + '"]');
@@ -4122,7 +4126,7 @@
             const wrap = document.getElementById('custom-color-wrap');
             if (wrap) wrap.style.background = '';
             const existing = cart.find(i => i.id === currentProductId);
-            if (existing) { existing.color = selectedColor; renderCart(); }
+            if (existing) { existing.color = selectedColor; saveCart(); renderCart(); }
         }
         function initCustomColor() {
             const input = document.getElementById('custom-color');
@@ -4136,7 +4140,7 @@
                 const lbl = document.getElementById('color-label');
                 if (lbl) lbl.textContent = 'Custom ' + selectedColor;
                 const existing = cart.find(i => i.id === currentProductId);
-                if (existing) { existing.color = selectedColor; renderCart(); }
+                if (existing) { existing.color = selectedColor; saveCart(); renderCart(); }
             });
         }
         function selectSize(btn) {
@@ -4148,7 +4152,7 @@
             btn.classList.add('border-brand-dark','bg-brand-dark','text-white');
             selectedSize = btn.dataset.size;
             const existing = cart.find(i => i.id === currentProductId);
-            if (existing) { existing.size = selectedSize; renderCart(); }
+            if (existing) { existing.size = selectedSize; saveCart(); renderCart(); }
         }
 
         // --- SORT DROPDOWN ---
@@ -4450,7 +4454,7 @@
             if (nameEl) nameEl.textContent = selectedSymbol || '';
             showSymbolMeaning(selectedSymbol);
             const existing = cart.find(i => i.id === currentProductId);
-            if (existing) { existing.symbol = selectedSymbol; renderCart(); }
+            if (existing) { existing.symbol = selectedSymbol; saveCart(); renderCart(); }
         }
         function moveSymbols(dir) {
             const box = document.getElementById('symbol-options');
@@ -4619,7 +4623,7 @@
             btn.classList.add('border-brand-dark', 'bg-brand-dark', 'text-white');
             selectedKid = { sex: btn.dataset.sex || '', age: btn.dataset.age || '' };
             const existing = cart.find(i => i.id === currentProductId);
-            if (existing) { existing.kidSex = selectedKid.sex; existing.kidAge = selectedKid.age; renderCart(); }
+            if (existing) { existing.kidSex = selectedKid.sex; existing.kidAge = selectedKid.age; saveCart(); renderCart(); }
         }
         function openSizeGuide() {
             const m = document.getElementById('size-modal');
@@ -4860,13 +4864,21 @@
             const paidRef = new URLSearchParams(location.search).get('paystack_success');
             if (paidRef) {
                 try {
-                    const p = JSON.parse(localStorage.getItem('wa_pending_order') || 'null');
-                    if (p) finalizeOrder(p.method, p.total, p.orderId, p.fee, p);
-                    localStorage.removeItem('wa_pending_order');
-                } catch (e) { /* ignore */ }
+                    const check = await fetch('api/paystack.php?action=verify&reference=' + encodeURIComponent(paidRef)).then(x => x.json()).catch(() => ({ ok: false }));
+                    if (check.ok && check.status === 'success') {
+                        const p = JSON.parse(localStorage.getItem('wa_pending_order') || 'null');
+                        if (p) finalizeOrder(p.method, p.total, p.orderId, p.fee, p);
+                        localStorage.removeItem('wa_pending_order');
+                    } else {
+                        // Payment did not complete: keep the cart and the pending order.
+                        showPage('checkout');
+                        alert('Payment was not completed. Your items are still in your cart — please try again.');
+                    }
+                } catch (e) { /* keep the cart if verification cannot be reached */ }
                 history.replaceState({}, document.title, location.pathname);
             }
             applySeoSettings();
+            updateCartCount();
             trackVisit();
             applyPromotions();
             renderHomePage();
