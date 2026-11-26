@@ -2434,7 +2434,7 @@
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fieldVal('co-email'))) { alert('Please enter a valid email address.'); document.getElementById('co-email')?.focus(); return; }
             if (fieldVal('co-phone').replace(/\D/g, '').length < 7) { alert('Please enter a valid phone number.'); document.getElementById('co-phone')?.focus(); return; }
             const missingKid = cart.find(i => /kid|child|baby|children/i.test(String(i.category||'')) && (!(i.kidAge||'').trim() || !(i.kidSex||'').trim()));
-            if (missingKid) { alert('Please provide child age, height and sex for kids items before checkout.'); openProduct(missingKid.id); return; }
+            if (missingKid) { alert('Please provide child age and gender for kids items before checkout.'); openProduct(missingKid.id); return; }
             const totals = orderTotals();
             const total = totals.total;
             const orderId = 'WA-' + Math.floor(10000 + Math.random() * 90000);
@@ -2678,8 +2678,10 @@
             document.getElementById('product-title').innerText = product.name;
             document.getElementById('product-price').innerText = formatPrice(product.price);
             document.getElementById('detail-qty').value = 1; // Reset qty
-            const isKidsCat = /kid|child|baby|children/i.test(String(product.category||''));
-            const sizeList = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
+            const cfg = categoryConfig(product.category);
+            const cfgSizes = (cfg && cfg.sizes) || {};
+            const isKidsCat = /kid|child|baby|children/i.test(String(product.category||'')) || Boolean((cfgSizes.girls || []).length || (cfgSizes.boys || []).length);
+            const sizeList = (cfgSizes.adult || []).length ? cfgSizes.adult : ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL'];
             selectedSize = isKidsCat ? '' : 'M';
             selectedColor = 'White';
             const descEl = document.getElementById('product-description');
@@ -2693,14 +2695,19 @@
                 sizeWrap.classList.toggle('hidden', isKidsCat);
             }
             const sizeHeading=document.getElementById('size-heading-row');
-            if(sizeHeading) sizeHeading.classList.toggle('hidden', isKidsCat);
+            if(sizeHeading){ const title=sizeHeading.querySelector('h3'); if(title) title.classList.toggle('hidden', isKidsCat); }
             const kidsOptions=document.getElementById('kids-options');
-            if(kidsOptions) kidsOptions.classList.toggle('hidden', !isKidsCat);
+            if (kidsOptions) {
+                const allGirls = ['2-3 yrs','4-5 yrs','6-8 yrs','9-11 yrs','12-14 yrs','14-16 yrs'];
+                const hasKidsConfig = Boolean((cfgSizes.girls || []).length || (cfgSizes.boys || []).length);
+                const girls = hasKidsConfig ? (cfgSizes.girls || []) : allGirls;
+                const boys = hasKidsConfig ? (cfgSizes.boys || []) : allGirls;
+                const group = (sex, ages) => '<div class="mb-3"><p class="text-xs text-gray-600 mb-2 capitalize">' + sex + '</p><div class="flex flex-wrap gap-2">' +
+                    ages.map(a => '<button type="button" onclick="selectKid(this)" data-sex="' + sex.replace(/s$/, '') + '" data-age="' + a + '" class="kid-btn border border-gray-300 px-3 py-2 text-sm text-gray-600">' + a + '</button>').join('') + '</div></div>';
+                kidsOptions.innerHTML = group('Girls', girls) + group('Boys', boys);
+                kidsOptions.classList.toggle('hidden', !isKidsCat);
+            }
             selectedKid = { sex: '', age: '' };
-            document.querySelectorAll('#kids-options .kid-btn').forEach(b => {
-                b.classList.remove('border-brand-dark', 'bg-brand-dark', 'text-white');
-                b.classList.add('border-gray-300', 'text-gray-600');
-            });
             document.querySelectorAll('.color-btn').forEach(b => {
                 const on = b.dataset.color === 'White';
                 b.classList.toggle('ring-2', on);
@@ -2852,7 +2859,9 @@
         function addToCart(productId, quantity = 1) {
             const product = products.find(p => p.id === productId);
             if (!product || (product.stock || 0) <= 0) return;
-            const isKidsCat = /kid|child|baby|children/i.test(String(product.category||''));
+            const kidCfg = categoryConfig(product.category);
+            const kidSizes = (kidCfg && kidCfg.sizes) || {};
+            const isKidsCat = /kid|child|baby|children/i.test(String(product.category||'')) || Boolean((kidSizes.girls || []).length || (kidSizes.boys || []).length);
             const kidAge = isKidsCat ? (selectedKid.age || '') : '';
             const kidSex = isKidsCat ? (selectedKid.sex || '') : '';
             const kidHeight = '';
@@ -4201,13 +4210,14 @@
         async function loadCategories() {
             try {
                 const r = await fetch('api/categories.php?action=list', { cache: 'no-store' }).then(x => x.json());
-                if (r.ok && Array.isArray(r.categories)) customCategories = r.categories.map(c => c.name).filter(Boolean);
+                if (r.ok && Array.isArray(r.categories)) customCategories = r.categories.map(c => ({ name: c.name, sizes: c.sizes || { adult: [], girls: [], boys: [] } })).filter(c => c.name);
             } catch (e) { /* keep the built-in list */ }
         }
+        function categoryConfig(name) { return customCategories.find(c => c.name === name); }
         function getAppCategories(includeAll=true){
             const fromProducts=[...new Set((products||[]).map(p=>String(p.category||'').trim()).filter(c=>c && c.toLowerCase()!=='all' && c.toLowerCase()!=='all product'))];
             const cats=[];
-            customCategories.forEach(c=>{ if(!cats.some(x=>x.toLowerCase()===c.toLowerCase())) cats.push(c); });
+            customCategories.forEach(c=>{ if(!cats.some(x=>x.toLowerCase()===c.name.toLowerCase())) cats.push(c.name); });
             fromProducts.forEach(c=>{ if(!cats.some(x=>x.toLowerCase()===c.toLowerCase())) cats.push(c); });
             return includeAll ? ['All',...cats] : cats;
         }
