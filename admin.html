@@ -825,9 +825,13 @@ let editingId=null;
         const box = document.getElementById('cat-sizes-box');
         if (!box) return;
         box.innerHTML = Object.entries(CATEGORY_SIZE_GROUPS).map(([group, values]) =>
-            '<div><p class="text-[11px] text-gray-600 mb-1 capitalize">' + group + '</p><div class="flex flex-wrap gap-2">' +
+            '<div><div class="flex items-center gap-2 mb-1"><label class="flex items-center gap-1 text-[11px] text-brand-dark cursor-pointer font-medium"><input type="checkbox" class="cat-all accent-brand-sea" data-group="' + group + '" onchange="toggleAllCategorySizes(\'' + group + '\', this.checked)"> All</label><p class="text-[11px] text-gray-500 capitalize">' + group + '</p></div><div class="flex flex-wrap gap-2">' +
             values.map(v => '<label class="flex items-center gap-1 border border-gray-300 px-2 py-1 text-xs cursor-pointer"><input type="checkbox" class="cat-size accent-brand-sea" data-group="' + group + '" value="' + esc(v) + '"> ' + esc(v) + '</label>').join('') +
             '</div></div>').join('');
+    }
+    function toggleAllCategorySizes(group, checked) {
+        document.querySelectorAll('#cat-sizes-box .cat-size[data-group="' + group + '"]').forEach(cb => { cb.checked = checked; });
+        const msg = document.getElementById('cat-sizes-msg'); if (msg) msg.textContent = 'Click Save sizes to keep this change.';
     }
     function collectCategorySizes() {
         const out = { adult: [], girls: [], boys: [] };
@@ -837,6 +841,11 @@ let editingId=null;
     function applyCategorySizes(sizes) {
         const data = sizes || {};
         document.querySelectorAll('#cat-sizes-box .cat-size').forEach(cb => { cb.checked = Array.isArray(data[cb.dataset.group]) && data[cb.dataset.group].includes(cb.value); });
+        document.querySelectorAll('#cat-sizes-box .cat-all').forEach(cb => {
+            const group = cb.dataset.group;
+            const boxes = [...document.querySelectorAll('#cat-sizes-box .cat-size[data-group="' + group + '"]')];
+            cb.checked = boxes.length > 0 && boxes.every(b => b.checked);
+        });
     }
     function onCategoryChange() {
         const name = document.getElementById('np-category').value;
