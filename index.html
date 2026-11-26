@@ -2700,13 +2700,13 @@
             if(sizeHeading){ const title=sizeHeading.querySelector('h3'); if(title) title.classList.toggle('hidden', isKidsCat); }
             const kidsOptions=document.getElementById('kids-options');
             if (kidsOptions) {
-                const allGirls = ['2-3 yrs','4-5 yrs','6-8 yrs','9-11 yrs','12-14 yrs','14-16 yrs'];
-                const hasKidsConfig = Boolean((cfgSizes.girls || []).length || (cfgSizes.boys || []).length);
-                const girls = hasKidsConfig ? (cfgSizes.girls || []) : allGirls;
-                const boys = hasKidsConfig ? (cfgSizes.boys || []) : allGirls;
-                const group = (sex, ages) => '<div class="mb-3"><p class="text-xs text-gray-600 mb-2 capitalize">' + sex + '</p><div class="flex flex-wrap gap-2">' +
-                    ages.map(a => '<button type="button" onclick="selectKid(this)" data-sex="' + sex.replace(/s$/, '') + '" data-age="' + a + '" class="kid-btn border border-gray-300 px-3 py-2 text-sm text-gray-600">' + a + '</button>').join('') + '</div></div>';
-                kidsOptions.innerHTML = '<p class="text-xs font-semibold text-brand-dark uppercase tracking-wider mb-3">Sizes</p>' + group('Girls', girls) + group('Boys', boys);
+                const allAges = ['2-3 yrs','4-5 yrs','6-8 yrs','9-11 yrs','12-14 yrs','14-16 yrs'];
+                const configured = [...(cfgSizes.girls || []), ...(cfgSizes.boys || [])];
+                const ages = [...new Set(configured.length ? configured : allAges)];
+                kidsOptions.innerHTML = '<p class="text-xs font-semibold text-brand-dark uppercase tracking-wider mb-3">Sizes</p>'
+                    + '<div><p class="text-xs text-gray-600 mb-2">Boys/Girls</p><div class="flex flex-wrap gap-2">'
+                    + ages.map(a => '<button type="button" onclick="selectKid(this)" data-sex="Boys/Girls" data-age="' + escapeHtml(a) + '" class="kid-btn border border-gray-300 px-3 py-2 text-sm text-gray-600">' + escapeHtml(a) + '</button>').join('')
+                    + '</div></div>';
                 kidsOptions.classList.toggle('hidden', !isKidsCat);
             }
             selectedKid = { sex: '', age: '' };
