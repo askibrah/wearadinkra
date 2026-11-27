@@ -1825,7 +1825,7 @@
                     <p id="atc-size-hint" class="text-xs text-red-600 mt-2 hidden">Please choose a size first.</p>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-brand-dark mb-2">Choose Adinkra symbol</p>
+                    <p class="text-sm font-medium text-brand-sea mb-2">Choose Adinkra symbol</p>
                     <div id="atc-symbols" class="flex flex-wrap gap-2"></div>
                 </div>
                 <p class="text-center"><button onclick="openDeliveryInfo(); return false;" class="plain-btn text-xs text-orange-600 underline hover:text-orange-700"><i class="fa-solid fa-circle-info mr-1"></i>Deliver/Shipping Info:</button></p>
@@ -3140,7 +3140,7 @@
             if (adinkraSymbols.length > 1 && i === lastExploreIndex) i = (i + 1) % adinkraSymbols.length;
             lastExploreIndex = i;
             const s = adinkraSymbols[i];
-            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><div class="w-1/2 h-1/2 flex items-center justify-center"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full w-auto h-auto object-contain"></div></div>';
+            el.innerHTML = '<div class="w-full h-full flex items-center justify-center transition-opacity duration-500"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="max-w-full max-h-full w-auto h-auto object-contain"></div>';
             el.setAttribute('aria-label', s.name + ' Adinkra symbol');
             const nameEl = document.getElementById('explore-symbol-name');
             if (nameEl) nameEl.textContent = s.name;
