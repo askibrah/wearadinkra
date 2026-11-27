@@ -1001,17 +1001,25 @@
                     </div>
                 </div>
 
-                <!-- Video slide: no text or buttons, muted autoplay when active -->
+                <!-- Video slides: no text or buttons, muted playback only when active -->
                 <div class="carousel-slide absolute inset-0 opacity-0 z-0 bg-brand-dark">
                     <video id="hero-video" class="w-full h-full object-cover" src="assets/video/hero-video.mp4" muted loop playsinline preload="metadata" aria-label="Wear Adinkra video"></video>
+                </div>
+                <div class="carousel-slide absolute inset-0 opacity-0 z-0 bg-brand-dark">
+                    <video id="hero-video-2" class="w-full h-full object-cover" src="assets/video/hero-video-2.mp4" muted loop playsinline preload="metadata" aria-label="Wear Adinkra video"></video>
+                </div>
+                <div class="carousel-slide absolute inset-0 opacity-0 z-0 bg-brand-dark">
+                    <video id="hero-video-3" class="w-full h-full object-cover" src="assets/video/hero-video-3.mp4" muted loop playsinline preload="metadata" aria-label="Wear Adinkra video"></video>
                 </div>
 
                 <!-- Carousel Indicators -->
                 <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-2">
-                    <button onclick="goToSlide(0)" class="w-3 h-3 rounded-full bg-red-500 opacity-100 transition-opacity" id="dot-0"></button>
-                    <button onclick="goToSlide(1)" class="w-3 h-3 rounded-full bg-yellow-400 opacity-50 transition-opacity" id="dot-1"></button>
-                    <button onclick="goToSlide(2)" class="w-3 h-3 rounded-full bg-green-500 opacity-50 transition-opacity" id="dot-2"></button>
-                    <button onclick="goToSlide(3)" class="w-3 h-3 rounded-full bg-brand-sea opacity-50 transition-opacity" id="dot-3"></button>
+                    <button onclick="goToSlide(0)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-red-500 opacity-100 transition-opacity" id="dot-0"></button>
+                    <button onclick="goToSlide(1)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-yellow-400 opacity-50 transition-opacity" id="dot-1"></button>
+                    <button onclick="goToSlide(2)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-green-500 opacity-50 transition-opacity" id="dot-2"></button>
+                    <button onclick="goToSlide(3)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-brand-sea opacity-50 transition-opacity" id="dot-3"></button>
+                    <button onclick="goToSlide(4)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-red-500 opacity-50 transition-opacity" id="dot-4"></button>
+                    <button onclick="goToSlide(5)" class="w-3 h-3 md:w-1.5 md:h-1.5 rounded-full bg-yellow-400 opacity-50 transition-opacity" id="dot-5"></button>
                 </div>
             </div>
 
@@ -3025,12 +3033,13 @@
                     dot.classList.add('opacity-50');
                 }
             });
-            const heroVideo = document.getElementById('hero-video');
-            if (heroVideo) {
-                heroVideo.muted = true;
-                if (currentSlide === 3) { heroVideo.play().catch(() => {}); }
-                else { heroVideo.pause(); }
-            }
+            slides.forEach((slide, i) => {
+                const v = slide.querySelector('video');
+                if (!v) return;
+                v.muted = true;
+                if (i === currentSlide) v.play().catch(() => {});
+                else v.pause();
+            });
         }
 
         let lastExploreIndex = -1;
