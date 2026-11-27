@@ -726,7 +726,8 @@
                 <span>Subtotal</span>
                 <span id="cart-total">GH₵ 0.00 ($0.00)</span>
             </div>
-            <p class="text-sm text-gray-500 mb-6">Shipping & taxes calculated at checkout.</p>
+            <p class="text-sm text-gray-500 mb-3">Shipping &amp; taxes calculated at checkout.</p>
+            <p class="mb-6 text-center"><button onclick="openDeliveryInfo(); return false;" class="plain-btn text-xs text-brand-sea underline hover:text-brand-dark">Deliver/Shipping Info:</button></p>
             <button onclick="toggleCart(); showPage('checkout')" class="w-full bg-brand-sea text-white font-medium tracking-widest uppercase hover:bg-brand-dark transition-colors duration-300 py-4">
                 Checkout
             </button>
@@ -1669,7 +1670,7 @@
     <div id="promo-modal" class="fixed inset-0 z-[85] hidden items-center justify-center p-4">
         <div class="absolute inset-0 bg-brand-dark/70 backdrop-blur-sm" onclick="closePromoModal()"></div>
         <div class="promo-card relative w-full max-w-[240px] text-white text-center overflow-hidden" style="background:linear-gradient(145deg,#1C5D99 0%,#0B132B 70%)">
-            <button type="button" onclick="closePromoModal()" class="promo-close absolute top-2 right-2 w-7 h-7 bg-white/20 hover:bg-white/30 flex items-center justify-center z-10 text-xs p-0 leading-none shrink-0" aria-label="Close promotion"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="closePromoModal()" class="promo-close absolute -top-3 -right-3 w-9 h-9 bg-brand-dark hover:bg-brand-sea text-white flex items-center justify-center z-20 text-sm p-0 leading-none shrink-0 shadow-lg" aria-label="Close promotion"><i class="fa-solid fa-xmark pointer-events-none"></i></button>
             <i class="fa-solid fa-gift absolute top-3 left-3 text-brand-light text-base opacity-80"></i>
             <i class="fa-solid fa-star absolute bottom-4 right-3 text-brand-light text-sm opacity-70"></i>
             <div id="promo-adinkra-bg" class="absolute inset-0 overflow-hidden pointer-events-none opacity-25" aria-hidden="true"></div>
@@ -1828,6 +1829,7 @@
                     <p class="text-sm font-medium text-brand-dark mb-2">Choose Adinkra symbol</p>
                     <div id="atc-symbols" class="flex flex-wrap gap-2"></div>
                 </div>
+                <p class="text-center"><button onclick="openDeliveryInfo(); return false;" class="plain-btn text-xs text-brand-sea underline hover:text-brand-dark">Deliver/Shipping Info:</button></p>
                 <button onclick="confirmAddToCart()" class="w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Add to cart</button>
             </div>
         </div>
@@ -2231,6 +2233,12 @@
             const m = document.getElementById('promo-modal');
             m.classList.add('hidden'); m.classList.remove('flex');
             try { sessionStorage.setItem('wa_promo_seen', '1'); } catch (e) { /* ignore */ }
+        }
+        function initPromoClose() {
+            const x = document.querySelector('#promo-modal .promo-close');
+            if (!x || x.dataset.bound) return;
+            x.dataset.bound = '1';
+            x.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); closePromoModal(); });
         }
         function claimPromo() { closePromoModal(); showPage('shop'); }
         async function loadUsdRate() {
@@ -2926,7 +2934,7 @@
             }
             const symbolBox = document.getElementById('atc-symbols');
             symbolBox.innerHTML = adinkraSymbols.map(s =>
-                '<button type="button" onclick="selectAtcSymbol(this)" data-symbol="' + escapeHtml(s.name) + '" class="symbol-btn w-10 h-10 p-1 bg-white" title="' + escapeHtml(s.name) + '"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain pointer-events-none"></button>').join('')
+                '<button type="button" onclick="selectAtcSymbol(this)" data-symbol="' + escapeHtml(s.name) + '" class="symbol-btn w-20 h-20 p-2 bg-white" title="' + escapeHtml(s.name) + '"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain pointer-events-none"></button>').join('')
                 || '<p class="text-xs text-gray-500">No symbols available.</p>';
             const firstSymbol = symbolBox.querySelector('.symbol-btn');
             if (firstSymbol) firstSymbol.classList.add('selected');
@@ -5007,6 +5015,7 @@
             await loadSocialConfig();
             checkSession();
             flushPendingOrders();
+            initPromoClose();
             showPromoModal();
 
             const socialProvider = new URLSearchParams(location.search).get('social_provider');
