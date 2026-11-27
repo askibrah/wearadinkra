@@ -1807,6 +1807,32 @@
         </div>
     </div>
 
+    <!-- Add to cart options modal -->
+    <div id="add-to-cart-modal" class="fixed inset-0 bg-black/70 z-[85] hidden items-center justify-center p-3 sm:p-6" onclick="if(event.target.id==='add-to-cart-modal') closeAddToCartModal()">
+        <div class="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div class="sticky top-0 z-10 flex justify-between items-center px-6 py-4 bg-brand-dark text-white">
+                <h2 class="font-serif text-xl">Add to cart</h2>
+                <button onclick="closeAddToCartModal()" class="text-white/80 hover:text-white text-2xl" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="flex items-center gap-4 border-b border-gray-100 pb-4">
+                    <img id="atc-image" src="" alt="" class="w-16 h-16 object-contain bg-gray-50 border border-gray-200">
+                    <div><p id="atc-name" class="font-semibold text-brand-dark"></p><p id="atc-price" class="text-sm text-brand-sea"></p></div>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-brand-dark mb-2">Choose size</p>
+                    <div id="atc-sizes" class="flex flex-wrap gap-2"></div>
+                    <p id="atc-size-hint" class="text-xs text-red-600 mt-2 hidden">Please choose a size first.</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-brand-dark mb-2">Choose Adinkra symbol</p>
+                    <div id="atc-symbols" class="flex flex-wrap gap-2"></div>
+                </div>
+                <button onclick="confirmAddToCart()" class="w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea transition-colors">Add to cart</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Delivery / Shipping info modal -->
     <div id="delivery-info-modal" class="fixed inset-0 bg-black/70 z-[80] hidden items-center justify-center p-3 sm:p-6" onclick="if(event.target.id==='delivery-info-modal') closeDeliveryInfo()">
         <div class="bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -2872,22 +2898,83 @@
             } catch (e) { /* audio not available */ }
         }
         function clearCart(){cart=[];saveCart();updateCartCount();renderCart();}
-        function addToCart(productId, quantity = 1) {
+        let atcState = null;
+        function openAddToCartModal(productId, quantity = 1) {
             const product = products.find(p => p.id === productId);
             if (!product || (product.stock || 0) <= 0) return;
-            const kidCfg = categoryConfig(product.category);
-            const kidSizes = (kidCfg && kidCfg.sizes) || {};
-            const isKidsCat = /kid|child|baby|children/i.test(String(product.category||'')) || Boolean((kidSizes.girls || []).length || (kidSizes.boys || []).length);
-            const kidAge = isKidsCat ? (selectedKid.age || '') : '';
-            const kidSex = isKidsCat ? (selectedKid.sex || '') : '';
-            const kidHeight = '';
-            if (isKidsCat && (!kidAge || !kidSex)) {
-                alert('Please select your child\'s age and gender before adding this item to cart.');
+            const cfg = categoryConfig(product.category);
+            const sizes = (cfg && cfg.sizes) || {};
+            const isKids = /kid|child|baby|children/i.test(String(product.category||'')) || Boolean((sizes.girls || []).length || (sizes.boys || []).length);
+            const ages = [...new Set([...(sizes.girls || []), ...(sizes.boys || [])])];
+            const allAges = ['2-3 yrs','4-5 yrs','6-8 yrs','9-11 yrs','12-14 yrs','14-16 yrs'];
+            atcState = {
+                productId, quantity, isKids,
+                size: isKids ? '' : ((sizes.adult || [])[0] || 'M'),
+                kidAge: '', kidSex: '',
+                symbol: (adinkraSymbols[0] && adinkraSymbols[0].name) || ''
+            };
+            document.getElementById('atc-image').src = product.image || '';
+            document.getElementById('atc-name').textContent = product.name;
+            document.getElementById('atc-price').textContent = formatPrice(product.price);
+            const sizeBox = document.getElementById('atc-sizes');
+            if (isKids) {
+                sizeBox.innerHTML = (ages.length ? ages : allAges).map(a =>
+                    '<button type="button" onclick="selectAtcSize(this)" data-age="' + escapeHtml(a) + '" class="kid-btn border border-gray-300 px-3 py-2 text-sm text-gray-600">' + escapeHtml(a) + '</button>').join('');
+            } else {
+                sizeBox.innerHTML = ((sizes.adult || []).length ? sizes.adult : ['S','M','L','XL','2XL','3XL','4XL']).map(sz =>
+                    '<button type="button" onclick="selectAtcSize(this)" data-size="' + escapeHtml(sz) + '" class="size-btn border ' + (sz === atcState.size ? 'border-brand-dark bg-brand-dark text-white' : 'border-gray-300 text-gray-600') + ' px-4 py-2 text-sm">' + escapeHtml(sz) + '</button>').join('');
+            }
+            const symbolBox = document.getElementById('atc-symbols');
+            symbolBox.innerHTML = adinkraSymbols.map(s =>
+                '<button type="button" onclick="selectAtcSymbol(this)" data-symbol="' + escapeHtml(s.name) + '" class="symbol-btn w-10 h-10 p-1 bg-white" title="' + escapeHtml(s.name) + '"><img src="' + (s.displaySrc || s.src) + '" alt="' + escapeHtml(s.name) + '" class="w-full h-full object-contain pointer-events-none"></button>').join('')
+                || '<p class="text-xs text-gray-500">No symbols available.</p>';
+            const firstSymbol = symbolBox.querySelector('.symbol-btn');
+            if (firstSymbol) firstSymbol.classList.add('selected');
+            document.getElementById('atc-size-hint').classList.add('hidden');
+            const m = document.getElementById('add-to-cart-modal');
+            m.classList.remove('hidden'); m.classList.add('flex');
+        }
+        function closeAddToCartModal() {
+            const m = document.getElementById('add-to-cart-modal');
+            m.classList.add('hidden'); m.classList.remove('flex');
+            atcState = null;
+        }
+        function selectAtcSize(btn) {
+            document.querySelectorAll('#atc-sizes button').forEach(b => {
+                b.classList.remove('border-brand-dark', 'bg-brand-dark', 'text-white');
+                b.classList.add('border-gray-300', 'text-gray-600');
+            });
+            btn.classList.remove('border-gray-300', 'text-gray-600');
+            btn.classList.add('border-brand-dark', 'bg-brand-dark', 'text-white');
+            if (btn.dataset.age) { atcState.kidAge = btn.dataset.age; atcState.kidSex = 'Boys/Girls'; }
+            else { atcState.size = btn.dataset.size; }
+            document.getElementById('atc-size-hint').classList.add('hidden');
+        }
+        function selectAtcSymbol(btn) {
+            document.querySelectorAll('#atc-symbols .symbol-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            atcState.symbol = btn.dataset.symbol;
+        }
+        function confirmAddToCart() {
+            if (!atcState) return;
+            if (atcState.isKids && !atcState.kidAge) {
+                document.getElementById('atc-size-hint').classList.remove('hidden');
                 return;
             }
-            const symbol = selectedSymbol || '';
+            const state = atcState;
+            closeAddToCartModal();
+            addToCartNow(state.productId, state.quantity, { size: state.size, symbol: state.symbol, kidAge: state.kidAge, kidSex: state.kidSex });
+        }
+        function addToCart(productId, quantity = 1) { openAddToCartModal(productId, quantity); }
+        function addToCartNow(productId, quantity = 1, choice = {}) {
+            const product = products.find(p => p.id === productId);
+            if (!product || (product.stock || 0) <= 0) return;
+            const symbol = choice.symbol || '';
             const color = selectedColor || 'White';
-            const size = selectedSize || (isKidsCat ? '' : 'M');
+            const size = choice.size || 'M';
+            const kidAge = choice.kidAge || '';
+            const kidSex = choice.kidSex || '';
+            const kidHeight = '';
             const existingItem = cart.find(item => item.id === productId && item.size===size && item.color===color && item.symbol===symbol && (item.kidAge||'')===kidAge && (item.kidHeight||'')===kidHeight && (item.kidSex||'')===kidSex);
             product.stock = Math.max(0, (product.stock || 0) - quantity);
             if (existingItem) {
@@ -2901,11 +2988,7 @@
             toggleCart(); // Open cart to show feedback
         }
 
-        function quickAdd(productId) {
-            const product = products.find(p => p.id === productId);
-            if (product && /kid|child|baby|children/i.test(String(product.category||''))) { openProduct(productId); return; }
-            addToCart(productId, 1);
-        }
+        function quickAdd(productId) { addToCart(productId, 1); }
 
         function addCurrentProductToCart() {
             if (currentProductId) {
