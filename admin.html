@@ -1102,7 +1102,15 @@ async function saveAdminProfile(){
     const csrf=await fetch('api/admin.php?action=csrf').then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
     const result=await fetch('api/admin.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update_profile',csrf_token:csrf,name:document.getElementById('admin-profile-name').value,email:document.getElementById('admin-profile-email').value,phone:document.getElementById('admin-profile-phone').value,password:document.getElementById('admin-profile-password').value})}).then(x=>x.json()).catch(()=>({ok:false,message:'Network error.'}));
     const m=document.getElementById('admin-profile-msg');m.classList.remove('hidden');m.textContent=result.message;m.className='text-xs mt-3 '+(result.ok?'text-green-700':'text-red-600');
-    if(result.ok){document.getElementById('admin-profile-password').value='';playSuccessSound();adminToast('Admin account updated.');}
+    if(result.ok){
+        document.getElementById('admin-profile-password').value='';
+        if(result.user){
+            document.getElementById('admin-email-top').textContent=result.user.email;
+            document.getElementById('admin-avatar').textContent=String(result.user.name||'A').charAt(0).toUpperCase();
+            document.getElementById('admin-profile-phone').value=result.user.phone||'';
+        }
+        playSuccessSound();adminToast('Admin account updated.');
+    }
 }
 async function loadSettings(){
     try{const r=await fetch('api/seo.php?action=all').then(x=>x.json());if(r.ok)seoSettings=r.settings||{};}catch(e){}

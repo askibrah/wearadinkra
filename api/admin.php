@@ -61,6 +61,9 @@ switch ($action) {
         $phone = trim((string)($input['phone'] ?? ''));
         $password = (string)($input['password'] ?? '');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $name === '') wa_json(['ok' => false, 'message' => 'Valid name and email are required.'], 422);
+        $check = $pdo->prepare('SELECT id FROM admins WHERE email = ? AND id <> ? LIMIT 1');
+        $check->execute([$email, (int)$_SESSION['admin_id']]);
+        if ($check->fetch()) wa_json(['ok' => false, 'message' => 'Another admin already uses that email address.'], 422);
         $stmt = $pdo->prepare('UPDATE admins SET name = ?, email = ?, phone = ? WHERE id = ?');
         $stmt->execute([mb_substr($name,0,150), $email, mb_substr($phone,0,40), (int)$_SESSION['admin_id']]);
         if ($password !== '') {
@@ -68,7 +71,9 @@ switch ($action) {
             $stmt = $pdo->prepare('UPDATE admins SET password_hash = ? WHERE id = ?');
             $stmt->execute([password_hash($password, PASSWORD_DEFAULT), (int)$_SESSION['admin_id']]);
         }
-        wa_json(['ok' => true, 'message' => 'Admin profile updated.']);
+        $stmt = $pdo->prepare('SELECT * FROM admins WHERE id = ? LIMIT 1');
+        $stmt->execute([(int)$_SESSION['admin_id']]);
+        wa_json(['ok' => true, 'message' => 'Admin profile updated.', 'user' => wa_admin_public($stmt->fetch() ?: ['id' => (int)$_SESSION['admin_id'], 'name' => $name, 'email' => $email, 'phone' => $phone, 'role' => 'admin'])]);
 
     case 'login':
         $email = strtolower(trim((string)($input['email'] ?? '')));
