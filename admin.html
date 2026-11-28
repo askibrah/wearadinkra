@@ -204,6 +204,7 @@
                     <button onclick="settingsPane('signin',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Sign-in</button>
                     <button onclick="settingsPane('notif',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Notifications</button>
                     <button onclick="settingsPane('account',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Account</button>
+                    <button onclick="settingsPane('newsletter',this)" class="settings-tab px-5 py-2 text-xs uppercase tracking-wider border border-gray-300 hover:bg-gray-50">Send News Letters</button>
                 </div>
                 <form onsubmit="saveSettings(event)" class="space-y-6">
                     <div id="set-pane-seo" class="settings-pane space-y-6">
@@ -353,6 +354,18 @@
                             </div>
                             <button type="button" onclick="saveAdminProfile()" class="mt-5 w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Update account</button>
                             <p id="admin-profile-msg" class="hidden text-xs text-green-700 mt-3"></p>
+                        </div>
+                    </div>
+                    <div id="set-pane-newsletter" class="settings-pane hidden grid lg:grid-cols-1 gap-6">
+                        <div class="card p-6">
+                            <h2 class="font-bold text-[#0B132B] mb-1">Send News Letters</h2>
+                            <p class="text-xs text-gray-500 mb-5">Send a message to everyone subscribed to the newsletter.</p>
+                            <div class="space-y-4">
+                                <div><label class="text-xs font-semibold text-brand-dark">Subject</label><input id="news-subject" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1" placeholder="Newsletter subject"></div>
+                                <div><label class="text-xs font-semibold text-brand-dark">Message</label><textarea id="news-message" rows="8" class="w-full border border-gray-300 px-4 py-3 text-sm mt-1" placeholder="Write your newsletter..."></textarea></div>
+                                <button type="button" onclick="sendNewsletter()" class="w-full bg-brand-dark text-white py-3 text-xs uppercase tracking-widest hover:bg-brand-sea">Send to all subscribers</button>
+                                <p id="news-msg" class="hidden text-xs mt-3"></p>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -1098,6 +1111,21 @@ async function settingsPane(name,btn){
     if(btn)btn.className='settings-tab px-5 py-2 text-xs uppercase tracking-wider bg-brand-dark text-white';
 }
 let seoSettings={};
+async function sendNewsletter() {
+    const subject = document.getElementById('news-subject').value.trim();
+    const message = document.getElementById('news-message').value.trim();
+    const msg = document.getElementById('news-msg');
+    if (!subject || !message) { msg.classList.remove('hidden'); msg.className='text-xs mt-3 text-red-600'; msg.textContent='Subject and message are required.'; return; }
+    const csrf = await fetch('api/admin.php?action=csrf').then(r=>r.json()).then(x=>x.csrf_token).catch(()=>null);
+    const res = await fetch('api/subscribe.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send', csrf_token: csrf, subject, message })
+    }).then(r=>r.json()).catch(()=>({ok:false,message:'Network error.'}));
+    msg.classList.remove('hidden');
+    msg.className = 'text-xs mt-3 ' + (res.ok ? 'text-green-700' : 'text-red-600');
+    msg.textContent = res.message || 'Newsletter sent.';
+    if (res.ok) { document.getElementById('news-subject').value=''; document.getElementById('news-message').value=''; adminToast(res.message); }
+}
 async function saveAdminProfile(){
     const csrf=await fetch('api/admin.php?action=csrf').then(x=>x.json()).then(x=>x.csrf_token).catch(()=>null);
     const result=await fetch('api/admin.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'update_profile',csrf_token:csrf,name:document.getElementById('admin-profile-name').value,email:document.getElementById('admin-profile-email').value,phone:document.getElementById('admin-profile-phone').value,password:document.getElementById('admin-profile-password').value})}).then(x=>x.json()).catch(()=>({ok:false,message:'Network error.'}));

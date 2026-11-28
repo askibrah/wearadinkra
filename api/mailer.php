@@ -356,6 +356,16 @@ HTML;
     return wa_send_email($to, $subject, wa_email_layout($subject, 'Order ' . $orderId . ' is now ' . $label, $body));
 }
 
+/** Newsletter email to one subscriber. */
+function wa_email_newsletter(string $to, string $subject, string $message): bool
+{
+    $body = '<p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#1C5D99;">Wear Adinkra Newsletter</p>'
+        . '<h1 style="margin:0 0 20px;font-size:28px;line-height:1.2;color:#0B132B;font-weight:normal;">' . htmlspecialchars($subject) . '</h1>'
+        . '<div style="font-size:15px;line-height:1.8;color:#374151;">' . nl2br(htmlspecialchars($message)) . '</div>'
+        . '<p style="margin-top:28px;font-size:12px;color:#6b7280;">You are receiving this because you subscribed to the Wear Adinkra newsletter.</p>';
+    return wa_send_email($to, $subject, wa_email_layout($subject, $subject, $body));
+}
+
 /** Admin new-order alert email. */
 function wa_email_admin_order(string $to, string $orderId, string $customer, string $email, string $phone, float $total, string $method, string $items): bool
 {

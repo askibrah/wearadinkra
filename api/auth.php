@@ -177,6 +177,12 @@ switch ($action) {
         $stmt->execute([$name, $email, $phone, $hash, wa_now()]);
         $userId = (int)$pdo->lastInsertId();
 
+        // Account registration also joins the newsletter; duplicates are ignored.
+        try {
+            $sub = $pdo->prepare('INSERT IGNORE INTO newsletter_subscribers (email, created_at) VALUES (?, NOW())');
+            $sub->execute([$email]);
+        } catch (PDOException $e) { /* newsletter is optional */ }
+
         $otp = wa_generate_otp($pdo, $userId, 'account');
         $token = wa_issue_activation($pdo, $userId);
         $mailOk = wa_send_otps($pdo, ['email' => $email, 'phone' => $phone, 'name' => $name], $otp, $token);
